@@ -2,7 +2,9 @@
 #'
 #' Runs PDFs through the [Anystyle API](https://anystyle.io/) and create JSON files for each PDF with the identified citations.
 #'
-#' @param x file with .pdf extension
+#' @param doc_dir The name of the directory containing PDFs to be evaluated
+#' @param ref_dir The name of the directory where citation extractions are to be exported
+#' @param layout Specification of whether PDFs should be evaluated as no layout ("none"), column
 #'
 #' @return JSON
 #'
@@ -29,7 +31,7 @@ citation_extract <- function(doc_dir, ref_dir, layout){
     },cl = 4)
   } else if(layout == "columns"){
     pblapply(seq_along(json_files[still_need]),function(i){
-      system(paste('anystyle --overwrite -f json find --no-layout',
+      system(paste('anystyle --overwrite -f json find',
                    fls[still_need][i],' ',json_dirs[still_need][i]))
     },cl = 4)
   }

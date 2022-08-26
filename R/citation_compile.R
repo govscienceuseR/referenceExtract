@@ -2,7 +2,7 @@
 #'
 #' Reads in JSON files of extracted citations and combines them
 #'
-#' @param x file(s) with .JSON extension
+#' @param ref_dir directory name that holds the file(s) with .JSON extension extracted by Anystyle.io
 #'
 #' @return data frame
 #'
