@@ -24,4 +24,9 @@ Imports:
     data.table,
     pdftools,
     pbapply,
-    stringr
+    stringr,
+    jsonlite
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

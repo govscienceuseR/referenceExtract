@@ -7,7 +7,11 @@
 citation_extract(doc_dir, ref_dir, layout)
 }
 \arguments{
-\item{x}{file with .pdf extension}
+\item{doc_dir}{The name of the directory containing PDFs to be evaluated}
+
+\item{ref_dir}{The name of the directory where citation extractions are to be exported}
+
+\item{layout}{Specification of whether PDFs should be evaluated as no layout ("none"), column}
 }
 \value{
 JSON
@@ -16,6 +20,6 @@ JSON
 Runs PDFs through the \href{https://anystyle.io/}{Anystyle API} and create JSON files for each PDF with the identified citations.
 }
 \examples{
-citation_extraction(doc_dir = 'documents_trial1', ref_dir = 'reference_extracts_trial1_nolayout', layout = "none")
+citation_extract(doc_dir = 'documents_gsp/', ref_dir = 'reference_extracts_gsp', layout = "none")
 
 }

@@ -9,7 +9,7 @@
 #' @return JSON
 #'
 #' @examples
-#' citation_extraction(doc_dir = 'documents_trial1', ref_dir = 'reference_extracts_trial1_nolayout', layout = "none")
+#' citation_extract(doc_dir = 'documents_gsp/', ref_dir = 'reference_extracts_gsp', layout = "none")
 #'
 #' @export
 

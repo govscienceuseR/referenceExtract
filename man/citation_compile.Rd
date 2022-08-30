@@ -7,11 +7,16 @@
 citation_compile(ref_dir)
 }
 \arguments{
-\item{x}{file(s) with .JSON extension}
+\item{ref_dir}{directory name that holds the file(s) with .JSON extension extracted by Anystyle.io}
 }
 \value{
 data frame
 }
 \description{
 Reads in JSON files of extracted citations and combines them
+}
+\examples{
+dt <- citation_compile('reference_extracts_gsp')
+
+
 }

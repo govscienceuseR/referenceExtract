@@ -6,7 +6,7 @@
 #'
 #' @return data frame
 #'
-#' @examples
+#' @examples dt <- citation_compile('reference_extracts_gsp')
 #'
 #'
 #' @export
