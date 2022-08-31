@@ -44,20 +44,20 @@ list.files('~/Box/citation_classifier/reference_extracts_gsp')
 
 Next we will transform those JSONs to tabular data and compile them all into one data frame, keeping the file name as an identifier.
 
-```{r, warning = F}
+```{r, eval = F, warning = F}
 dt <- citation_compile('~/Box/citation_classifier/reference_extracts_gsp')
 ```
 
 The output from Anystyle is a bit messy. EXPLAIN WHY.
 
-```{r}
+```{r,eval = F}
 str(dt)
 DT::datatable(dt)
 ```
 
 So we use the clean function
 
-```{r}
+```{r,eval = F}
 cleaned_dt <- citation_clean(dt)
 ```
 
