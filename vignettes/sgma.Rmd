@@ -16,7 +16,8 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup, results = F, warning = F, message = F}
-packs = c('data.table','pdftools','pbapply','stringr', 'jsonlite', 'purrr', 'magrittr')
+packs = c('data.table','pdftools','pbapply','stringr', 'jsonlite', 
+          'purrr', 'magrittr', 'dplyr', 'tidyr')
 sapply(packs, require, character.only = T)
 library(citationExtract)
 ```
@@ -50,9 +51,8 @@ dt <- citation_compile('~/Box/citation_classifier/reference_extracts_gsp')
 
 The output from Anystyle is a bit messy. EXPLAIN WHY.
 
-```{r,eval = F}
-str(dt)
-DT::datatable(dt)
+```{r}
+DT::datatable(head(dt, n = 50))
 ```
 
 So we use the clean function

@@ -25,7 +25,9 @@ Imports:
     pdftools,
     pbapply,
     stringr,
-    jsonlite
+    jsonlite,
+    dplyr,
+    tidyr
 Suggests: 
     knitr,
     rmarkdown
