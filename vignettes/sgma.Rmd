@@ -24,28 +24,28 @@ library(citationExtract)
 Let's take a look at PDFs we have downloaded: the GSPs for California's SGMA.
 
 ```{r}
-list.files("documents_gsp/")
+list.files("~/Box/citation_classifier/documents_gsp/")
 ```
 
 We will take these files and walk through the first three steps of the citationExtract package: extracting with `citation_extract`, compiling with `citation_compile` and cleaning with `citation_clean`.
 
 The function below reads in every PDF in the 'documents_gsp/' folder and runs them through the Anystyle API, to extract probable citations as JSON files into the 'reference_extracts_gsp' folder. We specify no layout...
 
-```{r}
-citation_extract(doc_dir = 'documents_gsp/', 
-                 ref_dir = 'reference_extracts_gsp', 
+```{r, eval = F}
+citation_extract(doc_dir = '~/Box/citation_classifier/documents_gsp/', 
+                 ref_dir = '~/Box/citation_classifier/reference_extracts_gsp', 
                  layout = "none")
 ```
 
 Now we have the citation JSONS.
 ```{r}
-list.files('reference_extracts_gsp')
+list.files('~/Box/citation_classifier/reference_extracts_gsp')
 ```
 
 Next we will transform those JSONs to tabular data and compile them all into one data frame, keeping the file name as an identifier.
 
 ```{r, warning = F}
-dt <- citation_compile('reference_extracts_gsp')
+dt <- citation_compile('~/Box/citation_classifier/reference_extracts_gsp')
 ```
 
 The output from Anystyle is a bit messy. EXPLAIN WHY.
