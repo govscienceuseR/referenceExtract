@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 
 ```{r setup, results = F, warning = F, message = F}
 packs = c('data.table','pdftools','pbapply','stringr', 'jsonlite', 
-          'purrr', 'magrittr', 'dplyr', 'tidyr')
+          'purrr', 'magrittr', 'dplyr', 'tidyr', 'tools')
 sapply(packs, require, character.only = T)
 library(citationExtract)
 ```
@@ -49,6 +49,11 @@ Next we will transform those JSONs to tabular data and compile them all into one
 dt <- citation_compile('~/Box/citation_classifier/reference_extracts_gsp')
 ```
 
+```{r, echo = F}
+# Output from when citation_compile runs
+dt <- readRDS("~/Box/citation_classifier/data/gsp_references.RDS")
+```
+
 The output from Anystyle is a bit messy. EXPLAIN WHY.
 
 ```{r}
@@ -56,6 +61,12 @@ DT::datatable(head(dt, n = 50))
 ```
 
 So we use the clean function
+
+
+```{r, echo = F}
+# Output from when citation_compile runs
+dt <- fread("~/Box/citation_classifier/data/gsp_references.csv")
+```
 
 ```{r,eval = F}
 cleaned_dt <- citation_clean(dt)

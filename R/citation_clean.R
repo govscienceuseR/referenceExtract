@@ -112,11 +112,20 @@ citation_clean <- function(dt){
   }
   # Specific filtering: Titles
   cols = which(str_detect(colnames(df), "title(?!\\.)|title\\d+"))
+  df[,cols] <- data.frame(lapply(df[,cols], rm_word))
   agency.titles <- data.frame(lapply(df[,cols], extract_agency_titles))
-  if(sum(!is.na(agency.titles$title1.agency.in.title)) > 0){
-    df[,cols] <- lapply(df[,cols], rm_agency_titles)
-  }
-  # Specific filtering: NONE FOR CONTAINER OR PUBLISHER
+  df[,cols] <- lapply(df[,cols], rm_titles)
+  #if(sum(!is.na(agency.titles$title1.agency.in.title)) > 0){
+  #  df[,cols] <- lapply(df[,cols], rm_titles)
+  #}
+  # Specific filtering: CONTAINER
+  cols = which(str_detect(colnames(df), "container(?!\\.)|container\\d+"))
+  df[,cols] <- data.frame(lapply(df[,cols], rm_word))
+  df[,cols] <- data.frame(lapply(df[,cols], rm_row))
+  # Specific filtering: PUBLISHER
+  cols = which(str_detect(colnames(df), "publisher(?!\\.)|publisher\\d+"))
+  df[,cols] <- data.frame(lapply(df[,cols], rm_word))
+  df[,cols] <- data.frame(lapply(df[,cols], rm_row))
   # Specific filtering: DOI
   cols = which(str_detect(colnames(df), "doi(?![\\.|url])|doi\\d+"))
   # Need to compare df[,cols] to df[,doiurlcols]
@@ -131,7 +140,7 @@ citation_clean <- function(dt){
   authordf <- pmap_dfr(list(df[,"author"], df[,"ID"]), separate_author)
   authordf <- authordf %>%
     mutate(author = str_remove_all(base::trimws(author), rm.auth.word)) %>%
-    mutate(author = ifelse(str_detect(base::trimws(author), rm.auth.cell),
+    mutate(author = ifelse(str_detect(base::trimws(author), rm.row),
                            NA_character_, base::trimws(author))) %>%
     # Get rid of all non-word characters except: spaces, commas, &s -- got this from the internet
     mutate(author = str_remove_all(author, '[\\p{P}\\p{S}&&[^,& ]]')) %>%
@@ -139,7 +148,7 @@ citation_clean <- function(dt){
     mutate(author = ifelse(author == "", NA_character_, author)) %>%
     # Then run these again...
     mutate(author = str_remove_all(base::trimws(author), rm.auth.word)) %>%
-    mutate(author = ifelse(str_detect(base::trimws(author), rm.auth.cell),
+    mutate(author = ifelse(str_detect(base::trimws(author), rm.row),
                            NA_character_, base::trimws(author))) %>%
     ### Longer than 75 or shorter than 3 characters
     mutate(author = ifelse(nchar(author) > 75 | nchar(author) < 3, NA, author)) %>%
@@ -173,7 +182,8 @@ citation_clean <- function(dt){
 
       wide.df <- abbr.df %>%
         #unique() %>%
-        filter(!is.na(eval(parse(text = colnames(.)[2])))) %>%
+        #filter(!is.na(eval(parse(text = colnames(.)[2])))) %>% longer than needed
+        filter(!is.na(.[2])) %>%
         group_by(ID) %>%
         mutate(number = paste0(columns[i], row_number())) %>%
         pivot_wider(names_from = number,
@@ -203,7 +213,7 @@ citation_clean <- function(dt){
         colnames(string.dt) <- c(columns[i], "ID")
         lengthcol <- paste0(columns[i], ".lengths")
         df <- df %>%
-          select(-c(colnames(.)[cols], lengthcol)) %>%
+          select(-c(colnames(.)[cols], all_of(lengthcol))) %>%
           left_join(wide.df, by = "ID") %>%
           mutate(lengths = case_when(
             is.na(lengths) ~ 0,
@@ -261,47 +271,64 @@ citation_clean <- function(dt){
   match.test <- pmap_dfr(lengths, matching_fx)
   dt <- left_join(dt, match.test, by = "ID")
 
-  dt <- select(dt, ID, author, date, title, container, publisher, doi, url, #doiurl,
+  # Go ahead and collapse authors before unnesting
+  dt$author.new <- rep("", nrow(dt))
+  dt$date.new <- rep("", nrow(dt))
+  for(i in 1:nrow(dt)){
+    dt[i,"author.new"] <- paste(unlist(dt[i,author]), collapse='; ')
+    dt[i,"date.new"] <- suppressWarnings(str_extract(dt[i,date], "\\d{4}"))
+  }
+
+
+  dt <- select(dt, ID, author.new, date.new, title, container, publisher, doi, url, #doiurl,
                File,  author.lengths, date.lengths, title.lengths,
-               container.lengths, publisher.lengths, doi.lengths, url.lengths, nested)
+               container.lengths, publisher.lengths, doi.lengths, url.lengths, nested) %>%
+    rename(author = author.new, date = date.new)
 
   run.dt <- dt %>% filter(nested == "tu_even_unn" | nested == "ty_even_unn")
+  paste.dt <- anti_join(dt, run.dt)
+
+  # For everything else that won't be unnested, collapse
+  # Most of this is only length of 1 and so it won't matter, but it will collapse whatever hasn't yet been collapsed
+  id = paste.dt[,ID]
+  auth = paste.dt[,author]
+  yr = paste.dt[,date]
+  ti = paste.dt[,title]
+  c = paste.dt[,container]
+  p = paste.dt[,publisher]
+  doi = paste.dt[,doi]
+  url = paste.dt[,url]
+  File = paste.dt[,File]
+  nested = paste.dt[,nested]
+
+  paste.un <- pmap_dfr(list(id, auth, yr, ti, c, p, doi, url, File, nested), collpse)
+  paste.un <- select(paste.un, -ID)
 
   if(nrow(run.dt) > 0){
-    paste.dt <- anti_join(dt, run.dt)
-    # Go ahead and collapse authors before unnesting
-    run.dt[,author] <- apply(run.dt[,author], 1, function(x)
-      paste(unlist(x), collapse=', '))
+    #for(i in 1:nrow(run.dt)){
+    #if (run.dt$nested[i] == "uneven") {
+    #  runcols <- c("title", "container", "publisher", "doi", "url")
+    #  run.dt[i,runcols] <- sapply(run.dt[i,runcols], function(x) paste(x, collapse=' '))
+    #  run.dt[i,"date"] <- suppressWarnings(str_extract(run.dt[i,"date"], "\\d{4}"))
+    #}}
     run.un <- data.table()
     for(i in 1:nrow(run.dt)){
       if (run.dt$nested[i] == "tu_even_unn") {
         un <- unnest(run.dt[i,], cols = c(title, url))
-      } else {
+      } else if (run.dt$nested[i] == "ty_even_unn") {
         un <- unnest(run.dt[i,], cols = c(title, year))
+      } else { next
       }
       run.un <- rbind(un, run.un)
     }
-    run.un <- select(run.un, ID, author, year, title, container,
+    run.un <- select(run.un, author, year, title, container,
                      publisher, doi, url, File, nested)
-
-    # Could cut this
-    id = paste.dt[,ID]
-    auth = paste.dt[,author]
-    yr = paste.dt[,year][[1]][1]
-    ti = paste.dt[,title]
-    c = paste.dt[,container]
-    p = paste.dt[,publisher]
-    doi = paste.dt[,doi]
-    url = paste.dt[,url]
-    File = paste.dt[,File]
-    nested = paste.dt[,nested]
-
-    paste.un <- pmap_dfr(list(id, auth, yr, ti, c, p, doi, url, File, nested), collpse)
-
     dt <- rbind(run.un, paste.un) %>% select(-nested)
-  }
+  } else {
+      dt <- paste.un %>% select(-nested)
+    }
+
   # Reassign ID since we have lost some values
-  dt$ID <- 1:nrow(dt)
 
   df <- data.frame(dt)
   # Squish together lists
@@ -309,9 +336,16 @@ citation_clean <- function(dt){
   squish.cols <- which(colnames(df) %in% squish.cols)
   df[,squish.cols] <- suppressWarnings(sapply(df[,squish.cols], str_squish))
   df[,squish.cols] <- suppressWarnings(sapply(df[,squish.cols], encoding_change))
+  df[,squish.cols[2:4]] <- suppressWarnings(sapply(df[,squish.cols[2:4]], final_clean))
 
+  # Make sure there are
+  df <- data.frame(sapply(df, rpl_na))
+  # Remove anything that has basically no data in any column
+  df <- filter(df, !(is.na(title) & is.na(author) & is.na(publisher) & is.na(doi) & is.na(url)))
+  df <- unique(df)
+  df$ID <- 1:nrow(df)
+  dt <- data.table(df)
   return(dt)
-  # Line 857 to keep squishing
 
 }
 

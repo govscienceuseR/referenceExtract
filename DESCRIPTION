@@ -27,7 +27,8 @@ Imports:
     stringr,
     jsonlite,
     dplyr,
-    tidyr
+    tidyr,
+    tools
 Suggests: 
     knitr,
     rmarkdown

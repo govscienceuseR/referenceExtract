@@ -1,11 +1,8 @@
-
-### Function for the map function
 index.lengths <- function(x, y){
   data.frame(
     lengths = ifelse(is.na(x), 0, lengths(x)),
     ID = y)
 }
-
 
 date.formats <- c("\\d{1,2}-\\d{1,2}-\\d{4}", # XX-XX-XXXX
                   "\\d{1,2}-\\d{1,2}-\\s?\\d{2}", #XX-XX- XX
@@ -33,23 +30,23 @@ rm_yrs <- function(x){
 assign_year <- function(x) {
   ifelse(str_detect(x,"^\\d{1,2}-\\d{1,2}-\\d{4}$"),
          year(as.Date(x, format = "%m-%d-%Y")),
-         ifelse(str_detect(x,"^\\d{4}-\\d{1,2}-\\d{1,2}$"),
-                year(as.Date(x, format = "%Y-%m-%d")),
-                ifelse(str_detect(x,"^\\d{1,2}-\\d{1,2}-\\s?\\d{2}$"),
-                       year(as.Date(x, format = "%m-%d-%Y")),
-                       ifelse(str_detect(x,"^\\d{4}-\\d{1,2}$"),
-                              # 2 elements do not make a date, need to paste to make a day
-                              year(as.Date(paste(x,1,sep="-"), format = "%Y-%m-%d")),
-                              ifelse(str_detect(x,"^\\d{1,2}\\/\\d{1,2}\\/\\d{4}$"),
-                                     year(as.Date(x, format = "%m/%d/%Y")),
-                                     ifelse(str_detect(x,"^\\d{4}\\/\\d{1,2}\\/\\d{1,2}$"),
-                                            year(as.Date(x, format = "%Y/%m/%d")),
-                                            ifelse(str_detect(x,"^\\d{1,2}\\/\\d{1,2}\\/\\s?\\d{2}$"),
-                                                   year(as.Date(x, format = "%m/%d/%Y")),
-                                                   ifelse(str_detect(x,"^\\d{1,2}\\/\\d{4}$"),
-                                                          year(as.Date(paste(x,1,sep="/"), format = "%m/%Y/%d")),
-                                                          ifelse(str_detect(x,"^\\d{4}$"),
-                                                                 year(as.Date(x, format = "%Y")), "no pattern")))))))))
+  ifelse(str_detect(x,"^\\d{4}-\\d{1,2}-\\d{1,2}$"),
+         year(as.Date(x, format = "%Y-%m-%d")),
+  ifelse(str_detect(x,"^\\d{1,2}-\\d{1,2}-\\s?\\d{2}$"),
+         year(as.Date(x, format = "%m-%d-%Y")),
+  ifelse(str_detect(x,"^\\d{4}-\\d{1,2}$"),
+         # 2 elements do not make a date, need to paste to make a day
+         year(as.Date(paste(x,1,sep="-"), format = "%Y-%m-%d")),
+  ifelse(str_detect(x,"^\\d{1,2}\\/\\d{1,2}\\/\\d{4}$"),
+         year(as.Date(x, format = "%m/%d/%Y")),
+  ifelse(str_detect(x,"^\\d{4}\\/\\d{1,2}\\/\\d{1,2}$"),
+         year(as.Date(x, format = "%Y/%m/%d")),
+  ifelse(str_detect(x,"^\\d{1,2}\\/\\d{1,2}\\/\\s?\\d{2}$"),
+         year(as.Date(x, format = "%m/%d/%Y")),
+  ifelse(str_detect(x,"^\\d{1,2}\\/\\d{4}$"),
+         year(as.Date(paste(x,1,sep="/"), format = "%m/%Y/%d")),
+  ifelse(str_detect(x,"^\\d{4}$"),
+         year(as.Date(x, format = "%Y")), "no pattern")))))))))
 }
 
 doi_url_pattern <- c("doi\\..*|doi:")
@@ -69,7 +66,6 @@ rm_url <- function(x){
   ifelse(str_detect(x, rm_url_pattern), str_replace(x, rm_url_pattern, NA_character_), x)
 }
 
-
 url_pattern <- paste(c("^https?:\\/\\/.*",
                        "^ftp:\\/\\/\\.",
                        "^www\\."), collapse = "|")
@@ -80,17 +76,9 @@ keep_urls <- function(x){
 }
 
 agencies <- data.table::fread("~/Box/truckee/data/eia_data/agency_list.csv", fill = T)
-org.words <- c("Administration", "Agency", "Association", "Associates", "Authority",  "Board", "Bureau", "Center", "^Consult[a-z]+$",  "Commission", "Council",  "Department", "Foundation", "Government[s]*", "LLC",  "Forest Service", "Geological Survey", "Society", "Univeristy")
+org.words <- c("Administration", "Agency", "Association", "Associates", "Authority",  "Board", "Bureau", "Center", "Datacenter", "^Consult[a-z]+$",  "Commission", "Council", "County",  "Department", "District", "Foundation", "Government[s]*", "LLC", "Group", "Geological Survey", "Laboratory", "Service", "Society", "Univeristy", "\\bUS\\b")
 org.words <- paste(org.words, collapse = "|")
 agency.pattern <- paste(agencies$Agency, collapse = "\\b|\\b")
-
-#extract_agency_titles <- function(x){
-#  data.frame(
-#    agency.in.title = ifelse(str_detect(x, org.words) |
-#                               str_detect(x, agency.pattern),
-#                             x, NA),
-#    ID = dt[, "ID"])
-#}
 
 extract_agency_titles <- function(x){
   ifelse(str_detect(x, org.words) | str_detect(x, agency.pattern),
@@ -100,13 +88,25 @@ extract_agency_titles <- function(x){
 rm_title_pattern <- paste(c("[Pp]ersonal [Cc]ommunication:?",
                             "^\\d*$"), collapse = "|")
 
-rm_agency_titles <- function(x){
+rm_titles <- function(x){
   ifelse(str_detect(x, org.words) | str_detect(x, agency.pattern) |
-           str_detect(x, rm_title_pattern) | nchar(x) < 10 | nchar(x) > 250, NA, x)
+           str_detect(x, rm_title_pattern) | str_detect(x, rm.row) |
+           nchar(x) < 10 | nchar(x) > 250, NA, x)
+}
+
+rm_row <- function(x){
+  ifelse(str_detect(x, rm.row) | nchar(x) > 250, NA, x)
 }
 
 extract_doi <- function(x){
   ifelse(str_detect(x, doi_pattern), str_extract(x, doi_pattern), NA)
+}
+
+unlist_authors <- function(x){
+  paste(unlist(x), collapse='; ')
+}
+unlist_others <- function(x){
+  paste(unlist(x), collapse=' ')
 }
 
 match_doi1 <- function(df){
@@ -265,6 +265,56 @@ separate_author <- function(x, y){
   return(author)
 }
 
+rm.word <- c( '^[a-z]\\.\\s',
+              "^,\\s", # Dealing with if NAs were in the start
+              "^,$", # If it pasted 2 empties
+              "_{2,6}", # If there are multiple underscores
+              "^\\/\\s?", #Revmoe the forward slash and space to start
+              "^[:punct:]+$", # only punctuation
+              "[~><■✔►]+", # only punctuation
+              "^:\\s",
+              "[Aa] [Rr]eport by (the )?",
+              "[Aa] [Rr]eport for (the )?",
+              "[Aa] [Rr]eport of (the )?",
+              "[Aa] [Rr]eport to (the )?",
+              "[Aa] [Rr]eport prepared by (the )?",
+              "Accessed,?",
+              "^Bull$|^Bulletin$",
+              "Internet [Ww]ebsite",
+              "^Fiscal [Yy]ears?$",
+              "^Final [Dd]ecision",
+              "Prepared by",
+              "Prepared for (the )?",
+              "Final [Rr]eport to (the )?",
+              "^[Mm][Oo][Nn][Dd][Aa][Yy]$",
+              "^[Tt][Uu][Ee][Ss][Dd][Aa][Yy]$",
+              "^[Ww][Ee][Dd][Nn][Ee][Ss][Dd][Aa][Yy]$",
+              "^[Tt][Hh][Uu][Rr][Ss][Dd][Aa][Yy]$",
+              "^[Ff][Rr][Ii][Dd][Aa][Yy]$",
+              "^[Ss][Aa][Tt][Uu][Rr][Dd][Aa][Yy]$",
+              "^[Ss][Uu][Nn][Dd][Aa][Yy]$",
+              "^[Jj][Aa][Nn][Uu][Aa][Rr][Yy]$",
+              "^[Ff][Ee][Bb][Rr][Uu][Aa][Rr][Yy]$",
+              "^[Mm][Aa][Rr][Cc][Hh]$",
+              "^[Aa][Pp][Rr][Ii][Ll]$",
+              "^[Mm][Aa][Yy]$",
+              "^[Jj][Uu][Nn][Ee]$",
+              "^[Jj][Uu][Ll][Yy]$",
+              "^[Aa][Uu][Gg][Uu][Ss][Tt]$",
+              "^[Ss][Ee][Pp][Tt][Ee][Mm][Bb][Ee][Rr]$",
+              "^[Oo][Cc][Tt][Oo][Bb][Ee][Rr]$",
+              "^[Nn][Oo][Vv][Ee][Mm][Bb][Ee][Rr]$",
+              "^[Dd][Ee][Cc][Ee][Mm][Bb][Ee][Rr]$")
+rm.word <- paste(rm.word, collapse="|")
+
+rm_word <- function(x){
+  str_remove_all(base::trimws(x), rm.word)
+}
+
+rpl_na <- function(x){
+  ifelse(x == "NA" | x == "", NA, x)
+}
+
 rm.auth.word <- c( '^[a-z]\\.\\s', # Many authors begind with a. b. or c. etc as if its a list.
                    "^,\\s", # Dealing with if NAs were in the start
                    "^,$", # If it pasted 2 empties
@@ -273,6 +323,7 @@ rm.auth.word <- c( '^[a-z]\\.\\s', # Many authors begind with a. b. or c. etc as
                    "^+\\.?",
                    "^&\\s",
                    "•\\s",
+                   "^Appendix.{0,3}$",
                    "^[Mm][Oo][Nn][Dd][Aa][Yy],?\\s?",
                    "^[Tt][Uu][Ee][Ss][Dd][Aa][Yy],?\\s?",
                    "^[Ww][Ee][Dd][Nn][Ee][Ss][Dd][Aa][Yy],?\\s?",
@@ -290,34 +341,49 @@ rm.auth.word <- c( '^[a-z]\\.\\s', # Many authors begind with a. b. or c. etc as
                    "^[Aa][Uu][Gg][Uu][Ss][Tt],?\\s?",
                    "^[Ss][Ee][Pp][Tt][Ee][Mm][Bb][Ee][Rr],?\\s?",
                    "^[Oo][Cc][Tt][Oo][Bb][Ee][Rr],?\\s?",
-                   "[Nn][Oo][Vv][Ee][Mm][Bb][Ee][Rr],?\\s?",
+                   "^[Nn][Oo][Vv][Ee][Mm][Bb][Ee][Rr],?\\s?",
                    "^[Dd][Ee][Cc][Ee][Mm][Bb][Ee][Rr],?\\s?")
 rm.auth.word <- paste(rm.auth.word, collapse="|")
 
-rm.auth.cell <- c( "^[0-9]+$", # only digits
-                   "^\\d{1,2}\\:\\d{2}", # time
-                   "\\d{1,2}\\:\\d{2}\\s?[Aa].?[Mm].?", # time am
-                   "\\d{1,2}\\:\\d{2}\\s?[Pp].?[Mm].?", # time pm
-                   "\\bP\\.?O\\.? Box", # address
-                   "Box, P\\.?O\\.?", # address
-                   "Ave\\s@\\s|Rd\\s@\\s|Dr\\s@\\s|Blvd\\s@\\s|Ln\\s@\\s", #address
-                   "^\\d{1,3}nd|^\\d{1,3}th|^\\d{1,3}rd|^\\d{1,3}st", #address
-                   "\\d{1,2}\\syears\\sof\\sexperience", #resume
-                   "^Experience\\:", # resume
-                   "\\bB\\.?Sc\\.?\\b",
-                   "\\bP\\.?[Hh]\\.?[Dd]\\.?", # Various honorariums
-                   "^[[:punct:]]$", #punctuation only
-                   "^Contact\\sfor\\sMore", # Emails
-                   "^Attachment$",
-                   '^C:\\\\', # website of sorts
-                   "<?https?",
-                   "^Note[sd]?$",
-                   "^[Nn]otes, [Mm]eeting$",
-                   "^[Nn]ote[sd]?, [Cc]omment$",
-                   "^Comments?$",
-                   "^Regulations?$",
-                   "^Rehabilitation$")
-rm.auth.cell <- paste(rm.auth.cell, collapse="|")
+rm.row <- c( "^[0-9]+$", # only digits
+             "^_\\d", # Starting with an underscore then number indicates it is probably a file
+             "^_[A-Za-z]", # Same does with lower case letter
+             "^_{2,}",
+             "^\\d{1,2}\\:\\d{2}", # time
+             "\\d{1,2}\\:\\d{2}\\s?[Aa].?[Mm].?", # time am
+             "\\d{1,2}\\:\\d{2}\\s?[Pp].?[Mm].?", # time pm
+             "^\\d{1,2}\\/\\d{1,2}\\/\\d{2,4}",
+             "\\bP\\.?O\\.? Box", # address
+             "Box, P\\.?O\\.?", # address
+             "^Address",
+             "Ave\\s@\\s|Rd\\s@\\s|Dr\\s@\\s|Blvd\\s@\\s|Ln\\s@\\s", #address
+             "\\d{1,2}\\syears\\sof\\sexperience", #resume
+             "^Experience\\:", # resume
+             "\\bB\\.?Sc\\.?\\b",
+             "\\bP\\.?[Hh]\\.?[Dd]\\.?", # Various honorariums
+             "^[[:punct:]]$", #punctuation only
+             "^Contact\\sfor\\sMore", # Emails
+             "^Attachment$",
+             '^C:\\\\', # website of sorts
+             '[Bb]oard [Mm]eeting',
+             "^Date$",
+             "^Ibid$",
+             "^Note[sd]?$",
+             "^[Nn]otes, [Mm]eeting$",
+             "^[Nn]ote[sd]?, [Cc]omment$",
+             "^Comments?$",
+             "^Regulations?$",
+             "^Rehabilitation$",
+             "^Section\\.{0,3}",
+             "^[Mm][Oo][Nn][Dd][Aa][Yy],?\\s?",
+             "^[Tt][Uu][Ee][Ss][Dd][Aa][Yy],?\\s?",
+             "^[Ww][Ee][Dd][Nn][Ee][Ss][Dd][Aa][Yy],?\\s?",
+             "^[Tt][Hh][Uu][Rr][Ss][Dd][Aa][Yy],?\\s?",
+             "^[Ff][Rr][Ii][Dd][Aa][Yy],?\\s?",
+             "^[Ss][Aa][Tt][Uu][Rr][Dd][Aa][Yy],?\\s?",
+             "^[Ss][Uu][Nn][Dd][Aa][Yy],?\\s?")
+rm.row <- paste(rm.row, collapse="|")
+
 
 columns4fx <- columns <- c("date", "url", "title", "container", "publisher",
                            "doi", "author")
@@ -370,83 +436,107 @@ matching_fx <- function(jl, pl, tl, yl, ul, dl, z) {
                       (tl == yl) &
                       (tl == ul) &
                       (tl == dl), "tyud_even_unn",
-                    ifelse(tl > 1 &
-                             (jl == 0) &
-                             (pl == 0) &
-                             (tl == yl) &
-                             (ul == 0) &
-                             (tl == dl), "tyd_even_unn",
-                           ifelse(tl > 1 &
-                                    (jl == 0) &
-                                    (pl == 0) &
-                                    (yl == 0) &
-                                    (tl == ul) &
-                                    (tl == dl), "tud_even_unn",
-                                  ifelse(tl > 1 &
-                                           (jl == 0) &
-                                           (pl == 0) &
-                                           (yl == 0) &
-                                           (ul == 0) &
-                                           (tl == dl), "td_even_unn",
-                                         ifelse(tl > 1 &
-                                                  (jl == 0) &
-                                                  (pl == 0) &
-                                                  (yl == 0) &
-                                                  (tl == ul) &
-                                                  (dl == 0), "tu_even_unn",
-                                                ifelse(tl > 1 &
-                                                         (jl == 0) &
-                                                         (pl == 0) &
-                                                         (tl == yl) &
-                                                         (ul == 0) &
-                                                         (dl == 0), "ty_even_unn",
-                                                       ifelse(tl > 1 &
-                                                                (jl == 0) &
-                                                                (pl == 0) &
-                                                                (yl == 0) &
-                                                                (ul == 0) &
-                                                                (dl == 0), "t_even_unn",
-                                                              ifelse(pl == 1 &
-                                                                       (pl == tl | tl == 0) &
-                                                                       (pl == jl | jl == 0) &
-                                                                       (pl == yl | yl == 0) &
-                                                                       (pl == ul | ul == 0) &
-                                                                       (pl == dl | dl == 0), "even",
-                                                                     ifelse(jl == 1 &
-                                                                              (jl == tl | tl == 0) &
-                                                                              (jl == pl | pl == 0) &
-                                                                              (jl == yl | yl == 0) &
-                                                                              (jl == ul | ul == 0) &
-                                                                              (jl == dl | dl == 0), "even",
-                                                                            ifelse(tl == 1 &
-                                                                                     (tl == pl | pl == 0) &
-                                                                                     (tl == jl | jl == 0) &
-                                                                                     (tl == yl | yl == 0) &
-                                                                                     (tl == ul | ul == 0) &
-                                                                                     (tl == dl | dl == 0), "even",
-                                                                                   ifelse(yl == 1 &
-                                                                                            (yl == pl | pl == 0) &
-                                                                                            (yl == jl | jl == 0) &
-                                                                                            (yl == tl | tl == 0) &
-                                                                                            (yl == ul | ul == 0) &
-                                                                                            (yl == dl | dl == 0), "even",
-                                                                                          ifelse(dl == 1 &
-                                                                                                   (dl == pl | pl == 0) &
-                                                                                                   (dl == jl | jl == 0) &
-                                                                                                   (dl == yl | yl == 0) &
-                                                                                                   (dl == ul | ul == 0) &
-                                                                                                   (dl == tl | tl == 0), "even",
-                                                                                                 ifelse(ul == 1 &
-                                                                                                          (ul == pl | pl == 0) &
-                                                                                                          (ul == jl | jl == 0) &
-                                                                                                          (ul == yl | yl == 0) &
-                                                                                                          (ul == ul | tl == 0) &
-                                                                                                          (ul == dl | dl == 0), "even",
-                                                                                                        ifelse((tl == pl | pl == 0) &
-                                                                                                                 (tl == jl | jl == 0) &
-                                                                                                                 (tl == yl | yl == 0) &
-                                                                                                                 (tl == ul | ul == 0) &
-                                                                                                                 (tl == dl | dl == 0), "even","uneven")))))))))))))),
+              ifelse(tl > 1 &
+                       (jl == 0) &
+                       (pl == 0) &
+                       (tl == yl) &
+                       (ul == 0) &
+                       (tl == dl), "tyd_even_unn",
+              ifelse(tl > 1 &
+                       (jl == 0) &
+                       (pl == 0) &
+                       (yl == 0) &
+                       (tl == ul) &
+                       (tl == dl), "tud_even_unn",
+               ifelse(tl > 1 &
+                        (jl == 0) &
+                        (pl == 0) &
+                        (yl == 0) &
+                        (ul == 0) &
+                        (tl == dl), "td_even_unn",
+                ifelse(tl > 1 &
+                         (jl == 0) &
+                         (pl == 0) &
+                         (yl == 0) &
+                         (tl == ul) &
+                         (dl == 0), "tu_even_unn",
+                 ifelse(tl > 1 &
+                          (jl == 0) &
+                          (pl == 0) &
+                          (tl == yl) &
+                          (ul == 0) &
+                          (dl == 0), "ty_even_unn",
+                  ifelse(tl > 1 &
+                           (jl == 0) &
+                           (pl == 0) &
+                           (yl == 0) &
+                           (ul == 0) &
+                           (dl == 0), "t_even_unn",
+                 #ifelse(yl > 1 &
+                 #         (jl %in% c(0,1)) &
+                 #         (pl %in% c(0,1)) &
+                 #         (tl %in% c(0,1)) &
+                 #         (ul %in% c(0,1)) &
+                 #         (dl %in% c(0,1)), "y_uneven",
+                 #ifelse(tl > 1 &
+                 #         (jl %in% c(0,1)) &
+                 #         (pl %in% c(0,1)) &
+                 #         (yl %in% c(0,1)) &
+                 #         (ul %in% c(0,1)) &
+                 #         (dl %in% c(0,1)), "t_uneven",
+                 #ifelse(pl > 1 &
+                 #         (jl %in% c(0,1)) &
+                 #         (tl %in% c(0,1)) &
+                 #         (yl %in% c(0,1)) &
+                 #         (ul %in% c(0,1)) &
+                 #         (dl %in% c(0,1)), "p_uneven",
+                 #ifelse(jl > 1 &
+                 #         (pl %in% c(0,1)) &
+                 #         (tl %in% c(0,1)) &
+                 #         (yl %in% c(0,1)) &
+                 #         (ul %in% c(0,1)) &
+                 #         (dl %in% c(0,1)), "j_uneven",
+                  ifelse(pl == 1 &
+                           (pl == tl | tl == 0) &
+                           (pl == jl | jl == 0) &
+                           (pl == yl | yl == 0) &
+                           (pl == ul | ul == 0) &
+                           (pl == dl | dl == 0), "even",
+                  ifelse(jl == 1 &
+                           (jl == tl | tl == 0) &
+                           (jl == pl | pl == 0) &
+                           (jl == yl | yl == 0) &
+                           (jl == ul | ul == 0) &
+                           (jl == dl | dl == 0), "even",
+                   ifelse(tl == 1 &
+                           (tl == pl | pl == 0) &
+                           (tl == jl | jl == 0) &
+                           (tl == yl | yl == 0) &
+                           (tl == ul | ul == 0) &
+                           (tl == dl | dl == 0), "even",
+                   ifelse(yl == 1 &
+                          (yl == pl | pl == 0) &
+                          (yl == jl | jl == 0) &
+                          (yl == tl | tl == 0) &
+                          (yl == ul | ul == 0) &
+                          (yl == dl | dl == 0), "even",
+                   ifelse(dl == 1 &
+                          (dl == pl | pl == 0) &
+                          (dl == jl | jl == 0) &
+                          (dl == yl | yl == 0) &
+                          (dl == ul | ul == 0) &
+                          (dl == tl | tl == 0), "even",
+                   ifelse(ul == 1 &
+                          (ul == pl | pl == 0) &
+                          (ul == jl | jl == 0) &
+                          (ul == yl | yl == 0) &
+                          (ul == ul | tl == 0) &
+                          (ul == dl | dl == 0), "even",
+                   ifelse((tl == pl | pl == 0) &
+                          (tl == jl | jl == 0) &
+                          (tl == yl | yl == 0) &
+                          (tl == ul | ul == 0) &
+                          (tl == dl | dl == 0), "even","uneven")))))))))))))),
     ID = z
   )
 }
@@ -456,7 +546,6 @@ matching_fx <- function(jl, pl, tl, yl, ul, dl, z) {
 rpl.sep <- function(x){
   ifelse(str_detect(x, '\\"\\)'), str_remove(x, '\\"\\)'), x)
 }
-
 
 collpse <- function(id, auth, yr, ti, c, p, doi, url, File, nested){
   data.frame(
@@ -472,74 +561,17 @@ collpse <- function(id, auth, yr, ti, c, p, doi, url, File, nested){
     nested = nested)
 }
 
-rm.word <- c( '^[a-z]\\.\\s', # Many authors begind with a. b. or c. etc as if its a list.
-              "^,\\s", # Dealing with if NAs were in the start
-              "^,$", # If it pasted 2 empties
-              "_{2,6}", # If there are multiple underscores
-              "^\\/\\s?", #Revmoe the forward slash and space to start
-              "^[:punct:]+$", # only punctuation
-              "[~><■✔►]+", # only punctuation
-              "^:\\s",
-              "[Aa] [Rr]eport by (the )?",
-              #"[Aa] [Rr]eport by ",
-              "[Aa] [Rr]eport for (the )?",
-              "[Aa] [Rr]eport of (the )?",
-              "[Aa] [Rr]eport to (the )?",
-              "[Aa] [Rr]eport prepared by (the )?",
-              "Accessed,?",
-              "^Bull$|^Bulletin$",
-              "Internet [Ww]ebsite",
-              "^Fiscal [Yy]ears?$",
-              "^Final [Dd]ecision",
-              "Prepared by",
-              "Prepared for (the )?",
-              "Final [Rr]eport to (the )?",
-              "[Jj][Aa][Nn][Uu][Aa][Rr][Yy],?\\s?",  "[Ff][Ee][Bb][Rr][Uu][Aa][Rr][Yy],?\\s?",
-              "[Mm][Aa][Rr][Cc][Hh],?\\s?", "[Aa][Pp][Rr][Ii][Ll],?\\s?",
-              "[Mm][Aa][Yy],?\\s?", "[Jj][Uu][Nn][Ee],?\\s?", "[Jj][Uu][Ll][Yy],?\\s?",
-              "[Aa][Uu][Gg][Uu][Ss][Tt],?\\s?", "[Ss][Ee][Pp][Tt][Ee][Mm][Bb][Ee][Rr],?\\s?",
-              "[Oo][Cc][Tt][Oo][Bb][Ee][Rr],?\\s?", "[Nn][Oo][Vv][Ee][Mm][Bb][Ee][Rr],?\\s?",
-              "[Dd][Ee][Cc][Ee][Mm][Bb][Ee][Rr],?\\s?")
-rm.word <- paste(rm.word, collapse="|")
 
-rm.row <- c( "^[0-9]+$", # only digits
-             "^_\\d", # Starting with an underscore then number indicates it is probably a file
-             "^_[A-Za-z]", # Same does with lower case letter
-             "^_{2,}",
-             "^\\d{1,2}\\:\\d{2}", # time
-             "\\d{1,2}\\:\\d{2}\\s?[Aa].?[Mm].?", # time am
-             "\\d{1,2}\\:\\d{2}\\s?[Pp].?[Mm].?", # time pm
-             "^\\d{1,2}\\/\\d{1,2}\\/\\d{2,4}",
-             "\\bP\\.?O\\.? Box", # address
-             "Box, P\\.?O\\.?", # address
-             "^Address",
-             "Ave\\s@\\s|Rd\\s@\\s|Dr\\s@\\s|Blvd\\s@\\s|Ln\\s@\\s", #address
-             "\\d{1,2}\\syears\\sof\\sexperience", #resume
-             "^Experience\\:", # resume
-             "\\bB\\.?Sc\\.?\\b",
-             "\\bP\\.?[Hh]\\.?[Dd]\\.?", # Various honorariums
-             "^[[:punct:]]$", #punctuation only
-             "^Contact\\sfor\\sMore", # Emails
-             "^Attachment$",
-             '^C:\\\\', # website of sorts
-             #"<?https?",
-             "^Date$",
-             "^Ibid$",
-             "^Note[sd]?$",
-             "^[Nn]otes, [Mm]eeting$",
-             "^[Nn]ote[sd]?, [Cc]omment$",
-             "^Comments?$",
-             "^Regulations?$",
-             "^Rehabilitation$",
-             "^[Mm][Oo][Nn][Dd][Aa][Yy],?\\s?",
-             "^[Tt][Uu][Ee][Ss][Dd][Aa][Yy],?\\s?",
-             "^[Ww][Ee][Dd][Nn][Ee][Ss][Dd][Aa][Yy],?\\s?",
-             "^[Tt][Hh][Uu][Rr][Ss][Dd][Aa][Yy],?\\s?",
-             "^[Ff][Rr][Ii][Dd][Aa][Yy],?\\s?", "^[Ss][Aa][Tt][Uu][Rr][Dd][Aa][Yy],?\\s?",
-             "^[Ss][Uu][Nn][Dd][Aa][Yy],?\\s?")
-rm.row <- paste(rm.row, collapse="|")
 
 rm.row2 <- c("^ACTION", "^Accession$", "^Additionally",  "\\!", "^Also", "^AM$", "^Avenue$", "^BE IT FURTHER RESOLVED", "PUBLIC COMMENT MEETING", "^Rd$", "Responses to comment", "^Assembly Bill$", "^BEFORE THE", "^Attachment$", "^E\\-?mail", "^Email [Cc]ommunication$", "^Executive Director", "^Experience$", "^Express$", "^Expwy$", "^Fax$", "^FAX", "^FROM\\:", "^Further Information", "^Given the adequacy", "^Homepage$", "^However", "^I‐\\d\\d", "^I\\‐\\d\\d", "^I\\d\\d", "^In addition", "^In compliance", "^In other words",  "^Informational Meeting", "^In preparation", "^In press", "In progress", "In submission", "^Last Accessed", "^Last [Aa]mended", "^Last [Mm]odified", "^Last [Rr]eviewed", "^Last [Rr]evised", "^Last [Uu]pdated", "^Location$", "^NOTICE|^Notice", "^[Pp]ersonal [Cc]ommunication", "^[Pp]ersonal [Ii]nterview", "^Phone$",  "^Please", "^Photo", "^Image", "^Public [Mm]eeting",  "^Recieved$",  "^Release$",  "^Response$", "^Responses to Comment$",  "^Retrieved$", "^Review$", "^Reporting Form$", "^Rept$", "^Research$", "^Resolution$", "^Review$", "^Revised", "^Revision$", "^Review Period$",  "^Rule$",  "^St$",  "^SUBJECT\\:|^Subject\\:",  "^Senate [Bb]ill$",   "^South$",  "^Study$",  "^Tel$", "^Telephone$",  "^The$",  "^Therefore", "^These", "^This", "^Thus", "^To\\s",  "^Wkdy$",  "^WHEREAS") #"^And\\b",
 rm.row2 <- paste(rm.row2, collapse="|")
 
 conference <- paste(c("[Cc]onference(?!\\sCenter)", "[Cc]onference(?!\\sHall)", "[Ss]ymposium"), collapse = "|")
+
+final_clean <- function(x){
+    x <- trimws(toTitleCase(str_remove_all(x,'\\.|,|;|\\*|-|"|\\(|\\)|\\+|\\-|\\/|\\\\|:|\\[|\\]')))
+    x <- str_remove_all(x, "'")
+    x <- str_replace_all(x, "\\&", "and")
+    str_squish(x)
+}
+
