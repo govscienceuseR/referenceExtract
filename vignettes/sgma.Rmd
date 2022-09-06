@@ -72,4 +72,8 @@ dt <- fread("~/Box/citation_classifier/data/gsp_references.csv")
 cleaned_dt <- citation_clean(dt)
 ```
 
+```{r, eval = F, echo F}
+fwrite(cleaned_dt, "~/Box/citation_classifier/data/gsp_references_clean.csv")
+```
+
 
