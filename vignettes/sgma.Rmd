@@ -1,5 +1,6 @@
 ---
-title: "sgma"
+title: "citationExtract"
+subtitle: "A vignette using California's Groundwater Sustainability Plan documents"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{sgma}
@@ -15,22 +16,26 @@ knitr::opts_chunk$set(
 )
 ```
 
+The citationExtract tool from govscienceuseR is designed to take unstructured PDF documents, feed them through the anystyle.io citation extraction software, and return tagged citation data. We walk through these steps using California's Groundwater Sustainability Plan PDF documents.  
+
+First, be sure to download the citationExtract package from github (`devtools::install_github("govscienceuseR/citationExtract")` and load it in, as below. Also load the packages listed below.  
+
 ```{r setup, results = F, warning = F, message = F}
-packs = c('data.table','pdftools','pbapply','stringr', 'jsonlite', 
-          'purrr', 'magrittr', 'dplyr', 'tidyr', 'tools')
-sapply(packs, require, character.only = T)
 library(citationExtract)
+packages = c('data.table','pdftools','pbapply','stringr', 'jsonlite', 
+             'purrr', 'magrittr', 'dplyr', 'tidyr', 'tools')
+sapply(packages, require, character.only = T)
 ```
 
-Let's take a look at PDFs we have downloaded: the GSPs for California's SGMA.
+Now let's take a look at PDFs we will be analyzing. The PDFs have been downloaded all into one folder, listed below.  
 
 ```{r}
 list.files("~/Box/citation_classifier/documents_gsp/")
 ```
 
-We will take these files and walk through the first three steps of the citationExtract package: extracting with `citation_extract`, compiling with `citation_compile` and cleaning with `citation_clean`.
+We will take these files and walk through the three steps of the citationExtract package: extracting with `citation_extract`, compiling with `citation_compile`, and cleaning with `citation_clean`.  
 
-The function below reads in every PDF in the 'documents_gsp/' folder and runs them through the Anystyle API, to extract probable citations as JSON files into the 'reference_extracts_gsp' folder. We specify no layout...
+The `citation_extract` function below reads in every PDF in the document directory (doc_dir), 'documents_gsp/' folder, and runs them through [anystyle.io](https://anystyle.io/). Anystyle extracts probable citations and exports them to the reference directory (ref_dir), 'reference_extracts_gsp' as JSON files.. We specify no layout to the documents.  
 
 ```{r, eval = F}
 citation_extract(doc_dir = '~/Box/citation_classifier/documents_gsp/', 
@@ -38,41 +43,55 @@ citation_extract(doc_dir = '~/Box/citation_classifier/documents_gsp/',
                  layout = "none")
 ```
 
-Now we have the citation JSONS.
+After extractions we a JSON file for each PDF document.  
+
 ```{r}
 list.files('~/Box/citation_classifier/reference_extracts_gsp')
 ```
 
-Next we will transform those JSONs to tabular data and compile them all into one data frame, keeping the file name as an identifier.
+Next, the `citation_compile` function will transform those JSONs to tabular data and compile them all into one data frame, adding the file name as an identifier.  
 
 ```{r, eval = F, warning = F}
 dt <- citation_compile('~/Box/citation_classifier/reference_extracts_gsp')
 ```
 
 ```{r, echo = F}
-# Output from when citation_compile runs
+# Right now citation_compile is bugging when only in the package, so for now overwriting it. Output from when citation_compile runs outside of package
 dt <- readRDS("~/Box/citation_classifier/data/gsp_references.RDS")
 ```
 
-The output from Anystyle is a bit messy. EXPLAIN WHY.
+We can first look at this raw output from Anystyle. It organizes potential citations into the following categories:  
+
+```{r}
+colnames(dt)
+```
+
+But the predicted citations are a bit messy. Authors are nested into a matrix, some rows have listed values, etc.  
 
 ```{r}
 DT::datatable(head(dt, n = 50))
 ```
 
-So we use the clean function
+To try to clean up these potential citations, the `citation_clean` function goes through a series of steps. For each column the function unlists the data and filters out unlikely candidates for that column. For instance, if a number listed in the date column does not match any reasonable date format or expectation, it is removed. If a string in the URL column actually resembles a DOI, it is moved to that column. And so on. 
 
 
-```{r, echo = F}
-# Output from when citation_compile runs
-dt <- fread("~/Box/citation_classifier/data/gsp_references.csv")
-```
-
-```{r,eval = F}
+```{r, eval = F}
 cleaned_dt <- citation_clean(dt)
 ```
 
-```{r, eval = F, echo F}
+```{r, echo = F}
+# Output from when citation_clean runs
+cleaned_dt <- fread("~/Box/citation_classifier/data/gsp_references_clean.csv")
+```
+
+The product is an unlisted and filtered data frame, as below.  
+
+```{r}
+DT::datatable(head(cleaned_dt, n = 50))
+```
+
+
+```{r, eval = F, echo = F}
 fwrite(cleaned_dt, "~/Box/citation_classifier/data/gsp_references_clean.csv")
 ```
 

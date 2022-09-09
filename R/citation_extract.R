@@ -4,7 +4,7 @@
 #'
 #' @param doc_dir The name of the directory containing PDFs to be evaluated
 #' @param ref_dir The name of the directory where citation extractions are to be exported
-#' @param layout Specification of whether PDFs should be evaluated as no layout ("none"), column
+#' @param layout Specification of whether PDFs should be evaluated as no layout ("none"), or layout with two columns ("column")
 #'
 #' @return JSON
 #'
@@ -13,7 +13,7 @@
 #'
 #' @export
 
-citation_extract <- function(doc_dir, ref_dir, layout){
+citation_extract <- function(doc_dir, ref_dir, layout = "none"){
   dir.create(ref_dir)
   already_extracted = list.files(ref_dir, full.names = T, recursive = T, pattern = 'json')
   fls = list.files(doc_dir, recursive = T, pattern = 'PDF$|pdf$', full.names = T)
