@@ -1,12 +1,12 @@
 #' Anystyle.io extraction
 #'
-#' Runs PDFs through the [Anystyle API](https://anystyle.io/) and create JSON files for each PDF with the identified citations.
+#' Runs PDFs through the [Anystyle](https://anystyle.io/) and create JSON files for each PDF with the identified citations.
 #'
 #' @param doc_dir The name of the directory containing PDFs to be evaluated
 #' @param ref_dir The name of the directory where citation extractions are to be exported
 #' @param layout Specification of whether PDFs should be evaluated as no layout ("none"), or layout with two columns ("column")
 #'
-#' @return JSON
+#' @return JSON files in ref_dir
 #'
 #' @examples
 #' citation_extract(doc_dir = 'documents_gsp/', ref_dir = 'reference_extracts_gsp', layout = "none")

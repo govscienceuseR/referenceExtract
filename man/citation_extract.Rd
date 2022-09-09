@@ -4,20 +4,20 @@
 \alias{citation_extract}
 \title{Anystyle.io extraction}
 \usage{
-citation_extract(doc_dir, ref_dir, layout)
+citation_extract(doc_dir, ref_dir, layout = "none")
 }
 \arguments{
 \item{doc_dir}{The name of the directory containing PDFs to be evaluated}
 
 \item{ref_dir}{The name of the directory where citation extractions are to be exported}
 
-\item{layout}{Specification of whether PDFs should be evaluated as no layout ("none"), column}
+\item{layout}{Specification of whether PDFs should be evaluated as no layout ("none"), or layout with two columns ("column")}
 }
 \value{
-JSON
+JSON files in ref_dir
 }
 \description{
-Runs PDFs through the \href{https://anystyle.io/}{Anystyle API} and create JSON files for each PDF with the identified citations.
+Runs PDFs through the \href{https://anystyle.io/}{Anystyle} and create JSON files for each PDF with the identified citations.
 }
 \examples{
 citation_extract(doc_dir = 'documents_gsp/', ref_dir = 'reference_extracts_gsp', layout = "none")

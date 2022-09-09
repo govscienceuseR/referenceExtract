@@ -1,10 +1,10 @@
-#' Clean Anystyle Output
+#' Clean Anystyle output
 #'
 #' Runs through columns of the Anystyle output (c("date", "url", "title", "container", "publisher", "doi")) and cleans them. Steps include identifying the lengths of different lists in each citation to unlist and unnest them to create sensible citations.
 #'
-#' @param dt data.table from the citation_compile() function
+#' @param dt data table from the citation_compile() function
 #'
-#' @return data.table
+#' @return data table
 #'
 #' @examples cleaned_dt <- citation_clean(dt)
 #'

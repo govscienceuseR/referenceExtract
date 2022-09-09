@@ -10,13 +10,12 @@ citation_compile(ref_dir)
 \item{ref_dir}{directory name that holds the file(s) with .JSON extension extracted by Anystyle.io}
 }
 \value{
-data frame
+data table
 }
 \description{
-Reads in JSON files of extracted citations and combines them
+Reads in JSON files of extracted citations and combines them inot tabular data
 }
 \examples{
 dt <- citation_compile('reference_extracts_gsp')
-
 
 }

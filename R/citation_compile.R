@@ -1,13 +1,12 @@
 #' Compiling JSONs from the Anystyle extraction
 #'
-#' Reads in JSON files of extracted citations and combines them
+#' Reads in JSON files of extracted citations and combines them inot tabular data
 #'
 #' @param ref_dir directory name that holds the file(s) with .JSON extension extracted by Anystyle.io
 #'
-#' @return data frame
+#' @return data table
 #'
 #' @examples dt <- citation_compile('reference_extracts_gsp')
-#'
 #'
 #' @export
 

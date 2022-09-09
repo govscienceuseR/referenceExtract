@@ -2,15 +2,15 @@
 % Please edit documentation in R/citation_clean.R
 \name{citation_clean}
 \alias{citation_clean}
-\title{Clean Anystyle Output}
+\title{Clean Anystyle output}
 \usage{
 citation_clean(dt)
 }
 \arguments{
-\item{dt}{data.table from the citation_compile() function}
+\item{dt}{data table from the citation_compile() function}
 }
 \value{
-data.table
+data table
 }
 \description{
 Runs through columns of the Anystyle output (c("date", "url", "title", "container", "publisher", "doi")) and cleans them. Steps include identifying the lengths of different lists in each citation to unlist and unnest them to create sensible citations.
