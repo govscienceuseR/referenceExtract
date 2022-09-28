@@ -11,7 +11,7 @@
 #' @export
 
 citation_clean <- function(dt){
-  source("~/Documents/Davis/R-Projects/citationExtract/R/clean_functions.R")
+  source("R/clean_functions.R")
   # Add ID and replace NAs
   dt <- dt %>%
     data.table() %>%

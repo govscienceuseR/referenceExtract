@@ -9,7 +9,6 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
-knitr::opts_knit$set(root.dir = '~/Box/citation_classifier/')
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"

@@ -77,7 +77,7 @@ keep_urls <- function(x){
 
 #agencies <- data.table::fread("~/Box/truckee/data/eia_data/agency_list.csv", fill = T)
 #usethis::use_data(agencies)
-data("agencies")
+data("agencies", envir=environment())
 
 org.words <- c("Administration", "Agency", "Association", "Associates", "Authority",  "Board", "Bureau", "Center", "Datacenter", "^Consult[a-z]+$",  "Commission", "Council", "County",  "Department", "District", "Foundation", "Government[s]*", "LLC", "Group", "Geological Survey", "Laboratory", "Service", "Society", "Univeristy", "\\bUS\\b")
 org.words <- paste(org.words, collapse = "|")
