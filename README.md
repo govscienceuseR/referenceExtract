@@ -1,6 +1,8 @@
 # citationExtract
 
-The citationExtract tool from govscienceuseR is designed to take unstructured PDF documents, feed them through the anystyle.io citation extraction software, and return tagged citation data. See [citationClassify vignette](http://htmlpreview.github.io/?https://github.com/govscienceuseR/citationClassify/blob/master/vignettes/sgma.html) for an example using California Groundwater Sustainability Plan documents.
+The citationExtract tool from govscienceuseR is designed to take PDF documents, feed them through the anystyle.io citation extraction software, and return tagged citation data. Anystyle probabilistically identifies and tags items in a PDF that look like a citation and assign them to citations features like 'author' and 'journal'. This packages uses and improves upon this existing software.  
+
+See [citationExtract vignette](http://htmlpreview.github.io/?https://github.com/govscienceuseR/citationExtract/blob/master/vignettes/sgma.html) for an example using California Groundwater Sustainability Plan documents.
 
 ## Installation  
 
