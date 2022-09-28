@@ -76,8 +76,9 @@ keep_urls <- function(x){
 }
 
 #agencies <- data.table::fread("~/Box/truckee/data/eia_data/agency_list.csv", fill = T)
-#saveRDS(agencies,  "data/agencies.RDS")
-agencies <- readRDS("data/agencies.RDS")
+#usethis::use_data(agencies)
+data("agencies")
+
 org.words <- c("Administration", "Agency", "Association", "Associates", "Authority",  "Board", "Bureau", "Center", "Datacenter", "^Consult[a-z]+$",  "Commission", "Council", "County",  "Department", "District", "Foundation", "Government[s]*", "LLC", "Group", "Geological Survey", "Laboratory", "Service", "Society", "Univeristy", "\\bUS\\b")
 org.words <- paste(org.words, collapse = "|")
 agency.pattern <- paste(agencies$Agency, collapse = "\\b|\\b")
