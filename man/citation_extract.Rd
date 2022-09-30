@@ -4,14 +4,24 @@
 \alias{citation_extract}
 \title{Anystyle.io extraction}
 \usage{
-citation_extract(doc_dir, ref_dir, layout = "none")
+citation_extract(
+  doc_dir = NULL,
+  files = NULL,
+  ref_dir,
+  layout = "none",
+  cores = 1
+)
 }
 \arguments{
-\item{doc_dir}{The name of the directory containing PDFs to be evaluated}
+\item{doc_dir}{A directory containing PDFs}
+
+\item{files}{A vector of PDF file names to be evaluated}
 
 \item{ref_dir}{The name of the directory where citation extractions are to be exported}
 
 \item{layout}{Specification of whether PDFs should be evaluated as no layout ("none"), or layout with two columns ("column")}
+
+\item{cores}{how many cores you want to use in pblapply}
 }
 \value{
 JSON files in ref_dir

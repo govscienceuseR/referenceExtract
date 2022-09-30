@@ -5,7 +5,10 @@
 #' @param dt data table from the citation_compile() function
 #'
 #' @return data table
-#'
+#' @import data.table
+#' @import magrittr
+#' @import stringr
+#' @import
 #' @examples cleaned_dt <- citation_clean(dt)
 #'
 #' @export
@@ -62,6 +65,7 @@ citation_clean <- function(dt){
   dt <- left_join(dt, match.test, by = "ID")
 
   # have to do this because the columns of DT do not cooperate well with some
+  # note that I htink that's fixed by calling dt[,col,with = F]
   df <- data.frame(dt)
   MAX_OG <- c()
   # Separate lists within cells

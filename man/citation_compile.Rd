@@ -4,10 +4,12 @@
 \alias{citation_compile}
 \title{Compiling JSONs from the Anystyle extraction}
 \usage{
-citation_compile(ref_dir)
+citation_compile(ref_dir, cores = 1)
 }
 \arguments{
 \item{ref_dir}{directory name that holds the file(s) with .JSON extension extracted by Anystyle.io}
+
+\item{cores}{how many cores you want to use in pblapply, defaults to 1}
 }
 \value{
 data table
@@ -17,5 +19,4 @@ Reads in JSON files of extracted citations and combines them inot tabular data
 }
 \examples{
 dt <- citation_compile('reference_extracts_gsp')
-
 }

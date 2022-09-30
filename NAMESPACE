@@ -3,3 +3,7 @@
 export(citation_clean)
 export(citation_compile)
 export(citation_extract)
+import(data.table)
+import(magrittr)
+importFrom(jsonlite,fromJSON)
+importFrom(pbapply,pblapply)
