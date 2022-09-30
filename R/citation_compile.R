@@ -3,20 +3,22 @@
 #' Reads in JSON files of extracted citations and combines them inot tabular data
 #'
 #' @param ref_dir directory name that holds the file(s) with .JSON extension extracted by Anystyle.io
-#'
+#' @param cores how many cores you want to use in pblapply, defaults to 1
 #' @return data table
 #'
 #' @examples dt <- citation_compile('reference_extracts_gsp')
-#'
+#' @import data.table
+#' @import magrittr
+#' @importFrom pbapply pblapply
+#' @importFrom jsonlite fromJSON
 #' @export
 
-
-citation_compile <- function(ref_dir){
+citation_compile <- function(ref_dir,cores = 1){
   fl = list.files(ref_dir, full.names = T, pattern = 'json', recursive = T)
-  fl_list = pblapply(fl,function(x) fromJSON(x) %>% data.table() %>% .[,File:=x],cl = 4)
+  fl_list = pblapply(fl,function(x) fromJSON(x) %>% data.table() %>% .[,File:=x],cl = cores)
   retry = which(sapply(fl_list,class)=='try-error')
   replace_entries = pblapply(fl[retry],function(x) fromJSON(x) %>%
-                                 data.table() %>% .[,File:=basename(x)])
+                                 data.table() %>% .[,File:=basename(x)],cl = cores)
   fl_list[retry] <- replace_entries
   fl_dt = rbindlist(fl_list,fill = T,use.names=T)
 
