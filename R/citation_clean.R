@@ -14,7 +14,7 @@
 #' @export
 
 citation_clean <- function(dt){
-  source("R/clean_functions.R")
+  #source("R/clean_functions.R") these are now below
   # Add ID and replace NAs
   dt <- dt %>%
     data.table() %>%
