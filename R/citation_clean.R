@@ -929,7 +929,7 @@ rm.row2 <- paste(rm.row2, collapse="|")
 conference <- paste(c("[Cc]onference(?!\\sCenter)", "[Cc]onference(?!\\sHall)", "[Ss]ymposium"), collapse = "|")
 
 final_clean <- function(x){
-  x <- trimws(toTitleCase(str_remove_all(x,'\\.|,|;|\\*|-|"|\\(|\\)|\\+|\\-|\\/|\\\\|:|\\[|\\]')))
+  x <- trimws(tools::toTitleCase(str_remove_all(x,'\\.|,|;|\\*|-|"|\\(|\\)|\\+|\\-|\\/|\\\\|:|\\[|\\]')))
   x <- str_remove_all(x, "'")
   x <- str_replace_all(x, "\\&", "and")
   str_squish(x)
