@@ -8,7 +8,7 @@
 #' @import data.table
 #' @import magrittr
 #' @import stringr
-#' @import
+#' @import tools
 #' @examples cleaned_dt <- citation_clean(dt)
 #'
 #' @export
