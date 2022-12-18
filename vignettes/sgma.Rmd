@@ -68,7 +68,7 @@ colnames(dt)
 But the predicted citations are a bit messy. Authors are nested into a matrix, some rows have listed values, etc.  
 
 ```{r}
-DT::datatable(head(dt, n = 50))
+DT::datatable(head(select(dt, title, author, date, publisher, `container-title`, doi), n = 50), rownames = F)
 ```
 
 To try to clean up these potential citations, the `citation_clean` function goes through a series of steps. For each column the function unlists the data and filters out unlikely candidates for that column. For instance, if a number listed in the date column does not match any reasonable date format or expectation, it is removed. If a string in the URL column actually resembles a DOI, it is moved to that column. And so on. 
@@ -86,11 +86,11 @@ cleaned_dt <- fread("~/Box/citation_classifier/data/gsp_references_clean.csv")
 The product is an unlisted and filtered data frame, as below.  
 
 ```{r}
-DT::datatable(head(cleaned_dt, n = 50))
+DT::datatable(head(select(cleaned_dt, title, author, year, publisher, `container`, doi), n = 50), rownames = F)
 ```
 
-
-```{r, eval = F, echo = F}
+Let's save this file for use in our next step in the workflow, the [citationClassify](https://github.com/govscienceuseR/citationClassify) package. 
+```{r, eval = F}
 fwrite(cleaned_dt, "~/Box/citation_classifier/data/gsp_references_clean.csv")
 ```
 
