@@ -1,13 +1,16 @@
 ---
 title: "citationExtract"
 subtitle: "A vignette using California's Groundwater Sustainability Plan documents"
+output: html_document
+---
+<!----
+These were in the yaml but the html won't render to the vignette folder and that is annoying to me, so instead i run this: rmarkdown::render('vignettes/sgma.Rmd', output_dir = 'vignettes')
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{sgma}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
----
-
+--->
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
