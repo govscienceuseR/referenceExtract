@@ -1,8 +1,8 @@
 #' Clean Anystyle output
 #'
-#' Runs through columns of the Anystyle output (c("date", "url", "title", "container", "publisher", "doi")) and cleans them. Steps include identifying the lengths of different lists in each citation to unlist and unnest them to create sensible citations.
+#' Runs through columns of the Anystyle output (c("date", "url", "title", "container", "publisher", "doi")) and cleans them. Steps include identifying the lengths of different lists in each reference to unlist and unnest them to create sensible references.
 #'
-#' @param dt data table from the citation_compile() function
+#' @param dt data table from the reference_compile() function
 #'
 #' @return data table
 #' @import data.table
@@ -10,11 +10,11 @@
 #' @import stringr
 #' @import tools
 #'
-#' @examples cleaned_dt <- citation_clean(dt)
+#' @examples cleaned_dt <- reference_clean(dt)
 #'
 #' @export
 
-citation_clean <- function(dt){
+reference_clean <- function(dt){
   #source("R/clean_functions.R") these are now below
   # Add ID and replace NAs
   dt <- dt %>%

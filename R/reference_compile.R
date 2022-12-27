@@ -1,19 +1,19 @@
 #' Compiling JSONs from the Anystyle extraction
 #'
-#' Reads in JSON files of extracted citations and combines them inot tabular data
+#' Reads in JSON files of extracted references and combines them inot tabular data
 #'
 #' @param ref_dir directory name that holds the file(s) with .JSON extension extracted by Anystyle.io
 #' @param cores how many cores you want to use in pblapply, defaults to 1
 #' @return data table
 #'
-#' @examples dt <- citation_compile('reference_extracts_gsp')
+#' @examples dt <- reference_compile('reference_extracts_gsp')
 #' @import data.table
 #' @import magrittr
 #' @importFrom pbapply pblapply
 #' @importFrom jsonlite fromJSON
 #' @export
 
-citation_compile <- function(ref_dir,cores = 1){
+reference_compile <- function(ref_dir,cores = 1){
   fl = list.files(ref_dir, full.names = T, pattern = 'json', recursive = T)
   fl_list = pblapply(fl,function(x) fromJSON(x) %>% data.table() %>% .[,File:=x],cl = cores)
   retry = which(sapply(fl_list,class)=='try-error')

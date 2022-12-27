@@ -1,20 +1,20 @@
 #' Anystyle.io extraction
 #'
-#' Runs PDFs through the [Anystyle](https://anystyle.io/) and create JSON files for each PDF with the identified citations.
+#' Runs PDFs through the [Anystyle](https://anystyle.io/) and create JSON files for each PDF with the identified references.
 #'
 #' @param files A vector of PDF file names to be evaluated
 #' @param doc_dir A directory containing PDFs
-#' @param ref_dir The name of the directory where citation extractions are to be exported
+#' @param ref_dir The name of the directory where reference extractions are to be exported
 #' @param layout Specification of whether PDFs should be evaluated as no layout ("none"), or layout with two columns ("column")
 #' @param cores how many cores you want to use in pblapply
 #' @return JSON files in ref_dir
 #'
 #' @examples
-#' citation_extract(doc_dir = 'documents_gsp/', ref_dir = 'reference_extracts_gsp', layout = "none")
+#' reference_extract(doc_dir = 'documents_gsp/', ref_dir = 'reference_extracts_gsp', layout = "none")
 #'
 #' @export
 
-citation_extract <- function(doc_dir = NULL,files = NULL, ref_dir, layout = "none",cores = 1){
+reference_extract <- function(doc_dir = NULL,files = NULL, ref_dir, layout = "none",cores = 1){
   if(!is.null(doc_dir)&!is.null(files)){print('specify a directory or files, but not both')}
   if(!exists(ref_dir)){dir.create(ref_dir)}
   already_extracted = list.files(ref_dir, full.names = T, recursive = T, pattern = 'json')
