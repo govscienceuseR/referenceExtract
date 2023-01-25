@@ -6,6 +6,7 @@
 #'
 #' @return data table
 #' @import data.table
+#' @import dplyr
 #' @import magrittr
 #' @import stringr
 #' @import tools
