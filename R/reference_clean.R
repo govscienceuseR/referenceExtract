@@ -6,11 +6,12 @@
 #'
 #' @return data table
 #' @import data.table
-#' @import dplyr
 #' @import magrittr
-#' @import stringr
 #' @import tools
-#' @import purrr
+#' @importFrom stringr str_detect str_remove_all str_extract
+#' @importFrom dplyr select mutate rename left_join filter
+#' @importFrom purrr pmap_dfr
+#' @importFrom tidyr separate
 #'
 #' @examples cleaned_dt <- reference_clean(dt)
 #'
