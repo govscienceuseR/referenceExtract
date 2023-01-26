@@ -9,7 +9,7 @@
 #' @import magrittr
 #' @import tools
 #' @importFrom stringr str_detect str_remove_all str_extract
-#' @importFrom dplyr select mutate rename left_join filter
+#' @import dplyr
 #' @importFrom purrr pmap_dfr
 #' @importFrom tidyr separate
 #'
