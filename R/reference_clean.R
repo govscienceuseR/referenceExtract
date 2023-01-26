@@ -10,6 +10,7 @@
 #' @import magrittr
 #' @import stringr
 #' @import tools
+#' @import purrr
 #'
 #' @examples cleaned_dt <- reference_clean(dt)
 #'
