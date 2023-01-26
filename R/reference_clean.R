@@ -8,10 +8,10 @@
 #' @import data.table
 #' @import magrittr
 #' @import tools
-#' @importFrom stringr str_detect str_remove_all str_extract
+#' @import stringr
 #' @import dplyr
 #' @importFrom purrr pmap_dfr
-#' @importFrom tidyr separate
+#' @import tidyr
 #'
 #' @examples cleaned_dt <- reference_clean(dt)
 #'
