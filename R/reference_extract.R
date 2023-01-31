@@ -14,7 +14,7 @@
 #'
 #' @export
 
-reference_extract <- function(doc_dir = NULL,files = NULL, ref_dir, layout = "none",cores = 1){
+reference_extract <- function(doc_dir = NULL,files = NULL, ref_dir, layout = "layout",cores = 1){
   if(!is.null(doc_dir)&!is.null(files)){print('specify a directory or files, but not both')}
   if(!exists(ref_dir)){dir.create(ref_dir)}
   already_extracted = list.files(ref_dir, full.names = T, recursive = T, pattern = 'json')
@@ -32,12 +32,12 @@ reference_extract <- function(doc_dir = NULL,files = NULL, ref_dir, layout = "no
   sapply(unique(json_dirs[!dir.exists(json_dirs)]), dir.create, recursive = T)
   still_need = !json_files %in% already_extracted
 
-  if(layout == "none"){
+  if(layout == "no_layout"){
     pblapply(seq_along(json_files[still_need]),function(i){
       system(paste('anystyle --overwrite -f json find --no-layout',
                    fls[still_need][i],' ',json_dirs[still_need][i]))
     },cl = cores)
-  } else if(layout == "columns"){
+  } else if(layout == "layout"){
     pblapply(seq_along(json_files[still_need]),function(i){
       system(paste('anystyle --overwrite -f json find',
                    fls[still_need][i],' ',json_dirs[still_need][i]))

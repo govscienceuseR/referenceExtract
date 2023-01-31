@@ -8,7 +8,7 @@ reference_extract(
   doc_dir = NULL,
   files = NULL,
   ref_dir,
-  layout = "none",
+  layout = "layout",
   cores = 1
 )
 }
