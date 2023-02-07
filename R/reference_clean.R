@@ -6,16 +6,16 @@
 #'
 #' @return data table
 #' @import data.table
+#' @import dplyr
 #' @import magrittr
 #' @import tools
 #' @import stringr
 #' @importFrom purrr pmap_dfr
 #' @import tidyr
-#' @import dplyr
-#'
 #' @examples cleaned_dt <- reference_clean(dt)
 #'
 #' @export
+
 reference_clean <- function(dt){
   #source("R/clean_functions.R") these are now below
   # Add ID and replace NAs
@@ -25,12 +25,12 @@ reference_clean <- function(dt){
     select(author, title, date, publisher, container,
            doi, url, File)  %>%
     mutate(ID = 1:nrow(.),
-           title = na_if(title, "NULL"),
-           container = na_if(container, "NULL"),
-           publisher = na_if(publisher, "NULL"),
-           date = na_if(date, "NULL"),
-           doi = na_if(doi, "NULL"),
-           url = na_if(url, "NULL"))
+           title = ifelse(sapply(title,is.null),NA,title),
+           container = ifelse(sapply(container,is.null),NA,container),
+           publisher = ifelse(sapply(publisher,is.null),NA,publisher),
+           date = ifelse(sapply(date,is.null),NA,date),
+           doi = ifelse(sapply(doi,is.null),NA,doi),
+           url = ifelse(sapply(url,is.null),NA,url))
 
   # Get list lengths of each of the columns
   y = select(dt, ID)
@@ -942,7 +942,7 @@ conference <- paste(c("[Cc]onference(?!\\sCenter)", "[Cc]onference(?!\\sHall)", 
 
 
 final_clean <- function(x){
-  x <- trimws(tools::toTitleCase(str_replace_all(x,'\\.|,|;|\\*|"|\\(|\\)|\\+|\\-|\\/|\\\\|:|\\[|\\]',' ')))
+  x <- trimws(tools::toTitleCase(str_replace_all(x,'\\.|,|;|\\*|"|\\(|\\)|\\+|\\/|\\\\|:|\\[|\\]',' ')))
   x <- str_remove_all(x, "'")
   #x <- str_replace_all(x, "\\&", "and")
   str_squish(x)
