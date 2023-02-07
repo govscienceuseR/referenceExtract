@@ -9,7 +9,6 @@
 #' @import magrittr
 #' @import tools
 #' @import stringr
-#' @import dplyr
 #' @importFrom purrr pmap_dfr
 #' @import tidyr
 #' @import dplyr
@@ -17,7 +16,6 @@
 #' @examples cleaned_dt <- reference_clean(dt)
 #'
 #' @export
-
 reference_clean <- function(dt){
   #source("R/clean_functions.R") these are now below
   # Add ID and replace NAs
@@ -482,6 +480,8 @@ match_doi1 <- function(df){
   return(df)
 }
 
+#
+#' @export
 collapse_column <- function(x, column_name){
   string.dt <- data.table(matrix(nrow = nrow(x), ncol = 2))
   cols <- grep(paste0(column_name, "\\d+"), colnames(x))
@@ -501,10 +501,14 @@ collapse_column <- function(x, column_name){
   assign("string.dt", string.dt, envir = .GlobalEnv)
 }
 
+# Change to ASCII
+#' @export
 encoding_change <- function(x){
   iconv(x, from = "latin1", to = "ASCII", sub = "")
 }
 
+# Separate and clean authors
+#' @export
 separate_author <- function(x, y){
   author <- data.frame(x)
   #author <- lapply(author, function(x) ifelse(is.na(x), "", x))
@@ -672,9 +676,11 @@ rm.word <- c( '^[a-z]\\.\\s',
               "^[Dd][Ee][Cc][Ee][Mm][Bb][Ee][Rr]$")
 rm.word <- paste(rm.word, collapse="|")
 
+
 rm_word <- function(x){
   str_remove_all(base::trimws(x), rm.word)
 }
+
 
 rpl_na <- function(x){
   ifelse(x == "NA" | x == "", NA, x)
@@ -752,6 +758,7 @@ rm.row <- paste(rm.row, collapse="|")
 
 columns4fx <- columns <- c("date", "url", "title", "container", "publisher",
                            "doi", "author")
+
 reassign_value <- function(df, i){
   if(columns4fx[i] == "date"){
     df$date <- ifelse(df$lengths == 0, NA,
@@ -791,7 +798,6 @@ reassign_value <- function(df, i){
   }
   return(df)
 }
-
 
 matching_fx <- function(jl, pl, tl, yl, ul, dl, z) {
   data.frame(
@@ -907,10 +913,10 @@ matching_fx <- function(jl, pl, tl, yl, ul, dl, z) {
 }
 
 
-# For after the separate function, want to remove the commas and parentheses
 rpl.sep <- function(x){
   ifelse(str_detect(x, '\\"\\)'), str_remove(x, '\\"\\)'), x)
 }
+
 
 collpse <- function(id, auth, yr, ti, c, p, doi, url, File, nested){
   data.frame(
@@ -932,6 +938,8 @@ rm.row2 <- c("^ACTION", "^Accession$", "^Additionally",  "\\!", "^Also", "^AM$",
 rm.row2 <- paste(rm.row2, collapse="|")
 
 conference <- paste(c("[Cc]onference(?!\\sCenter)", "[Cc]onference(?!\\sHall)", "[Ss]ymposium"), collapse = "|")
+
+
 
 final_clean <- function(x){
   x <- trimws(tools::toTitleCase(str_replace_all(x,'\\.|,|;|\\*|"|\\(|\\)|\\+|\\-|\\/|\\\\|:|\\[|\\]',' ')))
