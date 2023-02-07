@@ -12,6 +12,7 @@
 #' @import dplyr
 #' @importFrom purrr pmap_dfr
 #' @import tidyr
+#' @import dplyr
 #'
 #' @examples cleaned_dt <- reference_clean(dt)
 #'
@@ -927,7 +928,7 @@ collpse <- function(id, auth, yr, ti, c, p, doi, url, File, nested){
 
 
 
-rm.row2 <- c("^ACTION", "^Accession$", "^Additionally",  "\\!", "^Also", "^AM$", "^Avenue$", "^BE IT FURTHER RESOLVED", "PUBLIC COMMENT MEETING", "^Rd$", "Responses to comment", "^Assembly Bill$", "^BEFORE THE", "^Attachment$", "^E\\-?mail", "^Email [Cc]ommunication$", "^Executive Director", "^Experience$", "^Express$", "^Expwy$", "^Fax$", "^FAX", "^FROM\\:", "^Further Information", "^Given the adequacy", "^Homepage$", "^However", "^I‐\\d\\d", "^I\\‐\\d\\d", "^I\\d\\d", "^In addition", "^In compliance", "^In other words",  "^Informational Meeting", "^In preparation", "^In press", "In progress", "In submission", "^Last Accessed", "^Last [Aa]mended", "^Last [Mm]odified", "^Last [Rr]eviewed", "^Last [Rr]evised", "^Last [Uu]pdated", "^Location$", "^NOTICE|^Notice", "^[Pp]ersonal [Cc]ommunication", "^[Pp]ersonal [Ii]nterview", "^Phone$",  "^Please", "^Photo", "^Image", "^Public [Mm]eeting",  "^Recieved$",  "^Release$",  "^Response$", "^Responses to Comment$",  "^Retrieved$", "^Review$", "^Reporting Form$", "^Rept$", "^Research$", "^Resolution$", "^Review$", "^Revised", "^Revision$", "^Review Period$",  "^Rule$",  "^St$",  "^SUBJECT\\:|^Subject\\:",  "^Senate [Bb]ill$",   "^South$",  "^Study$",  "^Tel$", "^Telephone$",  "^The$",  "^Therefore", "^These", "^This", "^Thus", "^To\\s",  "^Wkdy$",  "^WHEREAS") #"^And\\b",
+rm.row2 <- c("^ACTION", "^Accession$", "^Additionally",  "\\!", "^Also", "^AM$", "^Avenue$", "^BE IT FURTHER RESOLVED","^Memorandum to", "PUBLIC COMMENT MEETING", "^Rd$", "Responses to comment", "^Assembly Bill$", "^BEFORE THE", "^Attachment$", "^E\\-?mail", "^Email [Cc]ommunication$", "^Executive Director", "^Experience$", "^Express$", "^Expwy$", "^Fax$", "^FAX", "^FROM\\:", "^Further Information", "^Given the adequacy", "^Homepage$", "^However", "^I‐\\d\\d", "^I\\‐\\d\\d", "^I\\d\\d", "^In addition", "^In compliance", "^In other words",  "^Informational Meeting", "^In preparation", "^In press", "In progress", "In submission", "^Last Accessed", "^Last [Aa]mended", "^Last [Mm]odified", "^Last [Rr]eviewed", "^Last [Rr]evised", "^Last [Uu]pdated", "^Location$", "^NOTICE|^Notice", "^[Pp]ersonal [Cc]ommunication", "^[Pp]ersonal [Ii]nterview", "^Phone$",  "^Please", "^Photo", "^Image", "^Public [Mm]eeting",  "^Recieved$",  "^Release$",  "^Response$", "^Responses to Comment$",  "^Retrieved$", "^Review$", "^Reporting Form$", "^Rept$", "^Research$", "^Resolution$", "^Review$", "^Revised", "^Revision$", "^Review Period$",  "^Rule$",  "^St$",  "^SUBJECT\\:|^Subject\\:",  "^Senate [Bb]ill$",   "^South$",  "^Study$",  "^Tel$", "^Telephone$",  "^The$",  "^Therefore", "^These", "^This", "^Thus", "^To\\s",  "^Wkdy$",  "^WHEREAS") #"^And\\b",
 rm.row2 <- paste(rm.row2, collapse="|")
 
 conference <- paste(c("[Cc]onference(?!\\sCenter)", "[Cc]onference(?!\\sHall)", "[Ss]ymposium"), collapse = "|")
