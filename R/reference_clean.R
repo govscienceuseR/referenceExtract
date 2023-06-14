@@ -353,7 +353,7 @@ reference_clean <- function(dt){
   # Make sure there are
   df <- data.frame(sapply(df, rpl_na))
   # Remove anything that has basically no data in any column
-  nothing <- (!(is.na(df$title) & is.na(df$author) & is.na(df$publisher) & is.na(df$doi) & is.na(df$url)))
+  nothing <- is.na(df$title) & is.na(df$author) & is.na(df$publisher) & is.na(df$doi) & is.na(df$url)
   df <- df[!nothing,]
   df <- unique(df)
   df$ID <- 1:nrow(df)
