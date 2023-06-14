@@ -16,45 +16,34 @@
 #'
 #' @export
 
-reference_clean <- function(dt){
-  #source("R/clean_functions.R") these are now below
+load('data/working_references.RData')
+library(data.table)
+dt <- working_references
+reference_clean2 <- function(dt){
+  if(all(class(dt)%in%'data.table')){stop('please provide a data.table object')}
+  if(any(colnames(dt) == 'container-title')){setnames(dt,'container-title','container')}
   # Add ID and replace NAs
-  dt <- dt %>% data.table()
-  setnames(dt,'container-title','container',skip_absent = T)
   vars <- c('author','title','date','publisher','container','doi','url','File')
-  dt <- dt[,colnames(dt) %in% vars,with = F]
+  vars <- vars[vars %in% colnames(dt)]
+  dt <- dt[,..vars]
   dt$ID = 1:nrow(dt)
-
-  dt$title <- ifelse(sapply(dt$title,is.null),NA,dt$title)
-  dt$container <- ifelse(sapply(dt$container,is.null),NA,dt$container)
-  dt$publisher <- ifelse(sapply(dt$publisher,is.null),NA,dt$publisher)
-  dt$date <- ifelse(sapply(dt$date,is.null),NA,dt$date)
-  dt$doi <- ifelse(sapply(dt$doi,is.null),NA,dt$doi)
-  dt$url <- ifelse(sapply(dt$url,is.null),NA,dt$url)
-
 
   # Get list lengths of each of the columns
   y = dt[,'ID',with = F]
   columns <- c("date", "url", "title", "container", "publisher", "doi")
-  for(i in columns){
-    x = dt[,..i]
-    lengthdt <- pmap_dfr(list(x, y), index.lengths)
-    colnames(lengthdt)[1] <- paste0(i, ".lengths")
-    dt <- merge(dt, lengthdt,all.x = T, by = "ID")
-  }
+
+  length_matrix <- data.table(apply(dt,2,function(x) sapply(x,length)))
+  length_matrix[,ID:=NULL]
+  colnames(length_matrix) <- paste0(colnames(length_matrix),'.lengths')
+  dt <- cbind(dt,length_matrix)
 
   # Identify longest length in any column and filter to get get rid
   # of anything with more than the title max? [[POSSIBLE EDIT]]
   column.lengths <- paste0(columns,".lengths")
   MAX <- max(sapply(dt[, ..column.lengths], max))
   TITLE_MAX <- max(dt$title.lengths)
+  dt <- dt[apply(dt[,..column.lengths],1,max) <= TITLE_MAX,]
 
-  dt <- dt[date.lengths <= TITLE_MAX,]
-  dt <- dt[url.lengths <= TITLE_MAX,]
-  dt <- dt[container.lengths <= TITLE_MAX,]
-  dt <- dt[container.lengths <= TITLE_MAX,]
-  dt <- dt[publisher.lengths <= TITLE_MAX,]
-  dt <- dt[doi.lengths <= TITLE_MAX,]
 
   # Look for congruent cases using matching_fx
   lengths <- list()
@@ -66,6 +55,9 @@ reference_clean <- function(dt){
       lengths[i] <- dt[,"ID"]
     }
   }
+
+  lengths[[1]]
+  str(lengths)
 
   match.test <- pmap_dfr(lengths, matching_fx)
   dt <- merge(dt, match.test, all.x = T,by = "ID")
