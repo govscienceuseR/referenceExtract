@@ -6,3 +6,20 @@
 
 #' @source \url{input URL}
 "agencies"
+
+#' A sample of candidate references extracted from a PDF file that can be fed into reference_clean()
+#'
+#' A dataset containing tagged references from a PDF extracted using anystyle.io.
+#' @name working_references
+#' @docType data
+#' @format A data.table object with 1001 rows
+NULL
+
+#' A sample of candidate references extracted from a PDF file THAT DOES NOT CURRENTLY WORK IN reference_clean()
+#'
+#' A dataset containing tagged references from a PDF extracted using anystyle.io.
+#' This set throws errors when fed into reference_clean(), and is primarily used for future debugging
+#' @name error_references
+#' @docType data
+#' @format A data.table object with 1001 rows
+NULL
