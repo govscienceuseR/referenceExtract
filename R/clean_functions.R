@@ -1,3 +1,6 @@
+#' Take a list with NULL entries and replace with NA value placeholders
+null2NA <- function(l){ifelse(sapply(l,is.null),NA,l)}
+
 index.lengths <- function(x, y){
   data.frame(
     lengths = ifelse(is.na(x), 0, lengths(x)),
@@ -79,7 +82,7 @@ keep_urls <- function(x){
 #usethis::use_data(agencies)
 data("agencies", envir=environment())
 
-org.words <- c("Administration", "Agency", "Association", "Associates", "Authority",  "Board", "Bureau", "Center", "Datacenter", "^Consult[a-z]+$",  "Commission", "Council", "County",  "Department", "District", "Foundation", "Government[s]*", "LLC", "Group", "Geological Survey", "Laboratory", "Service", "Society", "Univeristy", "\\bUS\\b")
+org.words <- c("Administration", "Agency", "Association", "Associates", "Authority",  "Board", "Bureau", "Center", "Datacenter", "^Consult[a-z]+$",  "Commission", "Council", "County",  "Department", "District", "Foundation", "Government[s]*", "LLC", "Group", "Geological Survey", "Survey","Application","U\\.S\\.","Laboratory", "Service", "Society", "Univeristy", "\\bUS\\b",'Letter','County','Coordinating',"Collaborate")
 org.words <- paste(org.words, collapse = "|")
 agency.pattern <- paste(agencies$Agency, collapse = "\\b|\\b")
 
@@ -112,11 +115,11 @@ unlist_others <- function(x){
   paste(unlist(x), collapse=' ')
 }
 
-match_doi1 <- function(df){
-  doiurl <- ifelse(is.na(df[,"doiurl"]), "", df[,"doiurl"])
-  doi <- ifelse(is.na(df[,"doi"]), "", df[,"doi"])
-  df[,"doiurl"] <- ifelse(doi == doiurl, NA_character_, df[,"doiurl"])
-  df[,"doi"] <- ifelse(doi != doiurl & doiurl != "", df[,"doiurl"], df[,"doi"])
+match_doi1 <- function(dt){
+  doiurl <- ifelse(is.na(dt[,"doiurl1"]), "", dt[,"doiurl1"])
+  doi <- ifelse(is.na(dt[,"doi1"]), "", dt[,"doi1"])
+  dt[,"doiurl1"] <- ifelse(doi == doiurl, NA_character_, dt[,"doiurl1"])
+  dt[,"doi1"] <- ifelse(doi != doiurl & doiurl != "", dt[,"doiurl1"], dt[,"doi1"])
   return(df)
 }
 
@@ -142,6 +145,76 @@ collapse_column <- function(x, column_name){
 encoding_change <- function(x){
   iconv(x, from = "latin1", to = "ASCII", sub = "")
 }
+
+separate_author2 <- function(dt){
+  author_sub <- dt[!sapply(dt$author,function(x) identical(x,list())),.(author,ID)]
+  author_sub <- author_sub[!is.na(author),]
+  author_stack <- rbindlist(author_sub$author,fill = T)
+  author_stack$ID <- rep(author_sub$ID,sapply(author_sub$author,nrow))
+
+  author_stack$others[is.na(author_stack$others)] <- NA
+  author_stack$author.clean <- NA
+  org_detect <- str_detect(author_stack$family,org.words)|str_detect(author_stack$given,org.words)
+
+  acols <- colnames(author_stack)[1:{which(colnames(author_stack)=='ID')-1}]
+  notna_stack <- data.table(!is.na(author_stack[,..acols]))
+  clean_paste <- {!org_detect} & rowSums(notna_stack[,.(family,given)]) == 2 & rowSums(notna_stack[,acols[!acols %in% c('family','given')],with = F])==0
+  author_stack$author.clean[clean_paste] <- paste(author_stack$family[clean_paste], author_stack$given[clean_paste], sep = ", ")
+
+  # If you have suffix but one or two others, take just family and given
+  clean_paste <- {!org_detect} & rowSums(notna_stack[,.(family,given,suffix)]) == 3 & rowSums(notna_stack[,acols[!acols %in% c('family','given','suffix')],with = F])<=1
+  author_stack$author.clean[clean_paste] <- paste(author_stack$family[clean_paste], author_stack$given[clean_paste], sep = ", ")
+
+  # If there is just suffix, keep it
+  org_detect <- str_detect(author_stack$family,org.words)|str_detect(author_stack$suffix,org.words)
+  clean_paste <- {!org_detect} & rowSums(notna_stack[,.(family,suffix)]) == 2 & rowSums(notna_stack[,acols[!acols %in% c('family','suffix')],with = F])==0
+  author_stack$author.clean[clean_paste] <- paste(author_stack$family[clean_paste], author_stack$suffix[clean_paste], sep = ", ")
+
+  # Has particle (and maybe suffix, but ignoring it)
+  org_detect <- str_detect(author_stack$family,org.words)|str_detect(author_stack$given,org.words)
+  clean_paste <- rowSums(notna_stack[,.(family,given,particle)]) == 3 & rowSums(notna_stack[,acols[!acols %in% c('family','given','particle')],with = F])<=1
+  author_stack$author.clean[clean_paste] <- paste(author_stack$given[clean_paste], author_stack$particle[clean_paste], author_stack$family[clean_paste])
+
+  # Straightforward agency
+  clean_paste <- {org_detect} & rowSums(notna_stack[,.(family,given)]) == 2 & rowSums(notna_stack[,acols[!acols %in% c('family','given')],with = F])==0
+  author_stack$author.clean[clean_paste] <- paste(author_stack$given[clean_paste],  author_stack$family[clean_paste])
+
+  # Others, want to get rid of it, but assuming that it has family and given
+  clean_paste <- rowSums(notna_stack[,.(family,given,others)]) == 3 & rowSums(notna_stack[,acols[!acols %in% c('family','given','others')],with = F])<=1
+  author_stack$author.clean[clean_paste] <- paste(author_stack$family[clean_paste],author_stack$given[clean_paste], sep = ", ")
+
+  clean_paste <- rowSums(notna_stack[,.(family,given,literal)]) == 3 & rowSums(notna_stack[,acols[!acols %in% c('family','given','literal')],with = F])==0
+  author_stack$author.clean[clean_paste] <- paste(author_stack$family[clean_paste],author_stack$given[clean_paste], sep = ", ")
+
+  clean_paste <- rowSums(notna_stack[,.(family,given,literal,particle)]) == 4 & rowSums(notna_stack[,acols[!acols %in% c('family','given','literal','particle')],with = F])==0
+  author_stack$author.clean[clean_paste] <- paste(author_stack$given[clean_paste], author_stack$particle[clean_paste], author_stack$family[clean_paste])
+
+  clean_paste <- rowSums(notna_stack[,.(family,particle)]) == 2 & rowSums(notna_stack[,acols[!acols %in% c('family','particle')],with = F])==0
+  author_stack$author.clean[clean_paste] <- paste(author_stack$particle[clean_paste], author_stack$family[clean_paste])
+
+  # if just given + others or literal, just set as given
+  clean_paste <- rowSums(notna_stack[,.(given,others)]) == 2 & rowSums(notna_stack[,acols[!acols %in% c('given','others')],with = F])==0
+  author_stack$author.clean[clean_paste] <-  author_stack$given[clean_paste]
+  clean_paste <- rowSums(notna_stack[,.(given,literal)]) == 2 & rowSums(notna_stack[,acols[!acols %in% c('given','literal')],with = F])==0
+  author_stack$author.clean[clean_paste] <-  author_stack$given[clean_paste]
+
+  # if everything, just family and given
+  clean_paste <- rowSums(notna_stack[,acols,with = F])==5
+  author_stack$author.clean[clean_paste] <-  paste(author_stack$family[clean_paste],author_stack$given[clean_paste], sep = ", ")
+
+  # if one thing, just that thing
+  clean_paste <- rowSums(notna_stack[,acols,with = F])==1
+  author_stack$author.clean[clean_paste] <-  paste(author_stack$family[clean_paste],author_stack$given[clean_paste], sep = ", ")
+
+  which.var <- colnames(author_stack)[unlist(apply(author_stack[clean_paste,],1,function(x) min(which(!is.na(x))),simplify = F))]
+  author_stack$author.clean[clean_paste] <- sapply(seq_along(which.var),function(x) author_stack[clean_paste,][x,][[which.var[x]]])
+  author_stack$author.clean[is.na(author_stack$author.clean)]<- "check"
+  # This is because one of the authors was named "TRUE", I think if T is name
+  author_stack$author.clean <- ifelse(author_stack$author.clean  == T, "", author_stack$author.clean)
+  return(author_stack)
+}
+
+
 
 separate_author <- function(x, y){
   author <- data.frame(x)
@@ -187,6 +260,8 @@ separate_author <- function(x, y){
                                   colnames(author)[3] == "suffix" |
                                   colnames(author)[4] == "suffix")){
     author.clean <- paste(author$family, author$given, sep = ", ")
+
+
     # Has particle (and maybe suffix, but ignoring it)
   } else if(ncol(author) == 3 &&
             (colnames(author)[2] == "particle" |

@@ -34,165 +34,152 @@ reference_clean2 <- function(dt){
   lt <- dt[,lapply(.SD,function(x)sapply(x,length)),.SDcols = columns]
   colnames(lt) <- paste0(colnames(lt),'.lengths')
   dt <- cbind(dt,lt)
-
-
-  # Get list lengths of each of the columns
-  y = dt[,'ID',with = F]
-
-   for(i in columns){
-    x = dt[,..i]
-    lengthdt <- pmap_dfr(list(x, y), index.lengths)
-    colnames(lengthdt)[1] <- paste0(i, ".lengths")
-    dt <- merge(dt, lengthdt,all.x = T, by = "ID")
-  }
-
   # Identify longest length in any column and filter to get get rid
   # of anything with more than the title max? [[POSSIBLE EDIT]]
   column.lengths <- paste0(columns,".lengths")
   MAX <- max(sapply(dt[, ..column.lengths], max))
   TITLE_MAX <- max(dt$title.lengths)
+  ### all entries for a given row have fewer entries than max title entries observed
+  dt <- dt[apply(dt[,..column.lengths] <= TITLE_MAX,1,all),]
 
-  dt <- dt[date.lengths <= TITLE_MAX,]
-  dt <- dt[url.lengths <= TITLE_MAX,]
-  dt <- dt[container.lengths <= TITLE_MAX,]
-  dt <- dt[container.lengths <= TITLE_MAX,]
-  dt <- dt[publisher.lengths <= TITLE_MAX,]
-  dt <- dt[doi.lengths <= TITLE_MAX,]
-
+  ##### NOTE THAT matching_fx right now breaks when real column names are used
+  ##### this can (should?) be fixed and then setting names as NULL would not be needed
+  lengths <- as.list(dt[,..column.lengths])
+  lengths$ID <- dt$ID
+  names(lengths) <- NULL
   # Look for congruent cases using matching_fx
-  lengths <- list()
-  for(i in 1:(length(columns)+1)){
-    if(i <= length(columns)){
-      col <- column.lengths[i]
-      lengths[i] <- dt[,..col]
-    } else {
-      lengths[i] <- dt[,"ID"]
-    }
-  }
-
   match.test <- pmap_dfr(lengths, matching_fx)
+
   dt <- merge(dt, match.test, all.x = T,by = "ID")
 
-  # have to do this because the columns of DT do not cooperate well with some
-  # note that I htink that's fixed by calling dt[,col,with = F]
-  df <- data.frame(dt)
-  MAX_OG <- c()
-  # Separate lists within cells
-  for(i in 1:length(columns)){
-    if(max(df[, column.lengths[i]]) > 1){
-      df <- suppressWarnings(separate(df, columns[i],
-                                      into =  paste0(columns[i],seq(1:max(df[, column.lengths[i]]))),
-                                      sep = '\\"\\,\\s\\"'))
-      col1 <- paste0(columns[i], "1")
-      df[,col1] <- str_remove_all(df[,col1], 'c\\(\\"')
-      cols <- grep(paste0(columns[i],"\\d+"), colnames(df))
-      last <- length(df[,cols])
-      MAX_OG[i] <- colnames(df[,cols])[last]
-      df[,cols] <- lapply(df[,cols], rpl.sep)
-    } else {
-      MAX_OG[i] <- columns[i]
-    }
-  }
+  spread_columns <- lapply(columns,function(x){
+    x.length <- paste0(x,'.lengths')
+    ml <- max(dt[,x.length,with = F])
+    col_spread <- data.table(do.call(rbind,lapply(dt[[x]],function(x) {c(x,rep(NA,ml - length(x)))})))
+    names(col_spread) <- paste0(x,1:ncol(col_spread))
+    col_spread
+  })
+
+
+  dt <- cbind(dt[,!colnames(dt) %in% columns,with = F],data.table(do.call(cbind,spread_columns)))
 
   # Specific rules for filtering out
   ## Dates: Extracting dates from pre-specified formats and take only year
-  cols = which(str_detect(colnames(df), "date(?!\\.)|date\\d+"))
+  date_cols <- colnames(dt)[str_detect(colnames(dt), "date[0-9]")]
   # Before extracting I should see if it matches a DOI format
-  df[,cols] <- lapply(df[,cols], extract_date_formats)
-  df[,cols] <- lapply(df[,cols], assign_year)
-  df[,cols] <- lapply(df[,cols], rm_yrs)
-  df[,cols] <- lapply(df[,cols], as.numeric)
+  dt[,(date_cols):=lapply(.SD,extract_date_formats),.SDcols = date_cols]
+  dt[,(date_cols):=lapply(.SD,assign_year),.SDcols = date_cols]
+  dt[,(date_cols):=lapply(.SD,rm_yrs),.SDcols = date_cols]
+  dt[,(date_cols):=lapply(.SD,as.numeric),.SDcols = date_cols]
+
   ## URLS: If DOI, assign it to a new column, otherwise keep valid URL pattern
-  cols = which(str_detect(colnames(df), "url(?!\\.)|url\\d+"))
+  cols = str_subset(colnames(dt), "url(?!\\.)|url\\d+")
   ## New columns for DOIs
   if(length(cols) == 1){
-    df$doiurl <- extract_doi_url(df[,cols])
-    df[,cols] <- sapply(df[,cols], rm_url) # using s versus l apply messed with me
-    df[,cols] <- sapply(df[,cols], keep_urls)
-    doiurlcols <- which(colnames(df) == "doiurl")
+    dt$doiurl <- extract_doi_url(dt[[cols]])
+    dt[[cols]] <- sapply(dt[[cols]], rm_url) # using s versus l apply messed with me
+    dt[[cols]] <- sapply(dt[[cols]], keep_urls)
+    doiurlcols <- which(colnames(dt) == "doiurl")
   } else {
     newcols <- c()
     for(i in 1:length(cols)){
       newcols[i] <- paste0("doiurl", i)
-      vector <- data.frame(rep(NA, nrow(df)))
+      vector <- data.frame(rep(NA, nrow(dt)))
       names(vector) <- newcols[i]
-      df <- cbind(df, vector)
+      dt <- cbind(dt, vector)
     }
-    doiurlcols = which(str_detect(colnames(df), "doiurl\\d+"))
-    df[,doiurlcols] <- lapply(df[,cols], extract_doi_url)
-    df[,cols] <- lapply(df[,cols], rm_url) # using s versus l apply messed with me
-    df[,cols] <- lapply(df[,cols], keep_urls)
+    doiurlcols = which(str_detect(colnames(dt), "doiurl\\d+"))
+    dt[,(doiurlcols):=lapply(.SD,extract_doi_url),.SDcols = cols]
+    #dt[,doiurlcols,with = F] <- lapply(dt[,cols,with = F], extract_doi_url)
+    dt[,(cols):=lapply(.SD,rm_url),.SDcols = cols]
+    dt[,(cols):=lapply(.SD,keep_urls),.SDcols = cols]
+    #df[,cols] <- lapply(df[,cols], rm_url) # using s versus l apply messed with me
+    #df[,cols] <- lapply(df[,cols], keep_urls)
   }
+
   # Specific filtering: Titles
-  cols = which(str_detect(colnames(df), "title(?!\\.)|title\\d+"))
-  df[,cols] <- data.frame(lapply(df[,cols], rm_word))
-  agency.titles <- data.frame(lapply(df[,cols], extract_agency_titles))
-  df[,cols] <- lapply(df[,cols], rm_titles)
+  cols = str_subset(colnames(dt), "title(?!\\.)|title\\d+")
+  dt[,(cols):=lapply(.SD,rm_word),.SDcols=cols]
+
+  agency.titles <- dt[,lapply(.SD,extract_agency_titles),.SDcols = cols]
+  #agency.titles <- data.frame(lapply(dt[,..cols], extract_agency_titles))
+  dt[,(cols):=lapply(.SD,rm_titles),.SDcols = cols]
+  #df[,cols] <- lapply(df[,cols], rm_titles)
+
   #if(sum(!is.na(agency.titles$title1.agency.in.title)) > 0){
   #  df[,cols] <- lapply(df[,cols], rm_titles)
   #}
   # Specific filtering: CONTAINER
-  cols = which(str_detect(colnames(df), "container(?!\\.)|container\\d+"))
-  df[,cols] <- data.frame(lapply(df[,cols], rm_word))
-  df[,cols] <- data.frame(lapply(df[,cols], rm_row))
+  cols = str_subset(colnames(dt), "container(?!\\.)|container\\d+")
+  dt[,(cols):=lapply(.SD,rm_word),.SDcols = cols]
+  dt[,(cols):=lapply(.SD,rm_row),.SDcols = cols]
+  #df[,cols] <- data.frame(lapply(df[,..cols], rm_word))
+  #df[,cols] <- data.frame(lapply(df[,cols], rm_row))
   # Specific filtering: PUBLISHER
-  cols = which(str_detect(colnames(df), "publisher(?!\\.)|publisher\\d+"))
-  df[,cols] <- data.frame(lapply(df[,cols], rm_word))
-  df[,cols] <- data.frame(lapply(df[,cols], rm_row))
+  cols = str_subset(colnames(dt), "publisher(?!\\.)|publisher\\d+")
+  dt[,(cols):=lapply(.SD,rm_word),.SDcols = cols]
+  dt[,(cols):=lapply(.SD,rm_row),.SDcols = cols]
+  #df[,cols] <- data.frame(lapply(df[,cols], rm_word))
+  #df[,cols] <- data.frame(lapply(df[,cols], rm_row))
   # Specific filtering: DOI
-  cols = which(str_detect(colnames(df), "doi(?![\\.|url])|doi\\d+"))
+  cols = str_subset(colnames(dt), "doi(?![\\.|url])|doi\\d+")
+
   # Need to compare df[,cols] to df[,doiurlcols]
   if(length(cols) == 1){
-    df[,cols] <- sapply(df[,cols], extract_doi)
-    if(length(df[,doiurlcols]) == 1){
-      df <- match_doi1(df) # could be modified to mash them up
+    dt[,(cols):=lapply(.SD,extract_doi),.SDcols = cols]
+    #dt[,..cols] <- sapply(df[,cols], extract_doi)
+    if(ncol(dt[,..doiurlcols]) == 1){
+      dt <- match_doi1(dt) # could be modified to mash them up
     }
   } #else {
   #df[,cols] <- lapply(df[,cols], extract_doi)}
   # Specific filtering: Authors
-  authordf <- pmap_dfr(list(df[,"author"], df[,"ID"]), separate_author)
-  authordf$author <- str_remove_all(base::trimws(authordf$author), rm.auth.word)
-  authordf$author <- ifelse(str_detect(base::trimws(authordf$author), rm.row), NA_character_, base::trimws(authordf$author))
+
+  authordt <- separate_author2(dt)
+  authordt$author.clean <- str_remove_all(base::trimws(authordt$author.clean), rm.auth.word)
+  authordt$author.clean <- ifelse(str_detect(base::trimws(authordt$author.clean), rm.row), NA_character_, base::trimws(authordt$author.clean))
   # Get rid of all non-word characters except: spaces, commas, &s -- got this from the internet
-  authordf$author <- str_remove_all(authordf$author, '[\\p{P}\\p{S}&&[^,& ]]')
-  authordf$author <- base::trimws(authordf$author)
-  authordf$author <- ifelse(authordf$author == "", NA_character_, authordf$author)
-  # Then run these again...
-  authordf$author <- str_remove_all(base::trimws(authordf$author), rm.auth.word)
-  authordf$author <- ifelse(str_detect(base::trimws(authordf$author), rm.row),
-                            NA_character_, base::trimws(authordf$author))
+
+  authordt$author.clean <- str_remove_all( authordt$author.clean, '[\\p{P}\\p{S}&&[^,& ]]')
+  authordt$author.clean <- base::trimws(authordt$author.clean)
+  authordt$author.clean <- ifelse(authordt$author.clean == "", NA_character_, authordt$author.clean)
+  # Then run these again... [TYLER NOTE -- IF WE STRIP FIRST AND THEN DO THIS DO WE NEED TO RE-RUN?]
+  authordt$author.clean <- str_remove_all(base::trimws(authordt$author.clean), rm.auth.word)
+  authordt$author.clean <- ifelse(str_detect(base::trimws(authordt$author.clean), rm.row),
+                            NA_character_, base::trimws(authordt$author.clean))
   ### Longer than 75 or shorter than 3 characters
-  authordf$author <- ifelse(nchar(authordf$author) > 75 | nchar(authordf$author) < 3, NA, authordf$author)
-  authordf <- authordf[!is.na(authordf$author),]
+  authordt$author.clean <- ifelse(nchar(authordt$author.clean) > 75 | nchar(authordt$author.clean) < 3, NA, authordt$author.clean)
+  authordt <- authordt[!is.na(authordt$author.clean),]
 
   # Removing duplicate and NAs, so lengthening and then widening (probably inefficient)
   # so that we can recount lengths and re-run the matching logic
-  columns <- c(columns, "author")
+  columns <- c(columns, "author.clean")
   column.lengths <- c(column.lengths, "author.lengths")
-  authorlengths <- authordf %>% group_by(ID) %>% count()  %>% as.data.table()
-  setnames(authorlengths,'n','author.lengths',skip_absent = T)
-  df <- df %>% left_join(authorlengths, by = "ID")
-  df$author.lengths <- ifelse(is.na(df$author.lengths), 0, df$author.lengths)
-  if(max(df$author.lengths) > 1){
-    MAX_OG[length(MAX_OG)+1] <- paste0("author", max(df$author.lengths))
+  authorlengths <- authordt[,.N,by=.(ID)]
+  setnames(authorlengths,'N','author.lengths')
+  dt <- merge(dt,authorlengths,by = 'ID',all.x = T)
+  dt$author.lengths <- ifelse(is.na(dt$author.lengths), 0, dt$author.lengths)
+
+  #### TYLER NOTE -- I'N NOT SURE WHAT THIS DOES ANYMORE ####
+  if(max(dt$author.lengths) > 1){
+    MAX_OG[length(MAX_OG)+1] <- paste0("author", max(dt$author.lengths))
   } else { MAX_OG[length(MAX_OG)+1] <- "author"}
 
   for(i in 1:length(columns)){
     coldetect <- paste0(columns[i], "(?![\\.|url])|", columns[i], "\\d+")
-    cols = which(str_detect(colnames(df), coldetect))
-    cols = cols[!(str_detect(colnames(df)[cols], "doiurl"))]
-    if(max(df[, column.lengths[i]]) > 1){
-      if(columns[i] != "author"){
-        abbr.df <- df %>%
-          filter(!(is.na(paste0(columns[i], "1")) & is.na(paste0(columns[i], "2")))) %>%
-          select(ID, all_of(cols)) %>%
+    cols = which(str_detect(colnames(dt), coldetect))
+    cols = cols[!(str_detect(colnames(dt)[cols], "doiurl"))]
+    if(max(dt[, column.lengths[i],with = F]) > 1){
+      if(columns[i] != "author.clean"){
+        abbr.dt <- dt[!(is.na(paste0(columns[i], "1")) & is.na(paste0(columns[i], "2"))),]
+        abbr.dt <- abbr.dt[,c('ID',colnames(abbr.dt)[cols]),with = F] %>%
           pivot_longer(cols = 2:ncol(.),
                        names_to = paste0(columns[i],".number"),
                        values_to = columns[i]) %>%
-          select(-paste0(columns[i],".number"))
-      } else {abbr.df <- authordf}
+        dplyr::select(-paste0(columns[i],".number"))
+      } else {abbr.dt <- authordt}
 
-      wide.df <- abbr.df %>%
+      wide.df <- abbr.dt %>%
         #unique() %>%
         #filter(!is.na(eval(parse(text = colnames(.)[2])))) %>% longer than needed
         filter(!is.na(.[2])) %>%
@@ -224,7 +211,7 @@ reference_clean2 <- function(dt){
         string.dt <- collapse_column(run.df, columns[i])
         colnames(string.dt) <- c(columns[i], "ID")
         lengthcol <- paste0(columns[i], ".lengths")
-        df <- df %>%
+        dt <- dt %>%
           select(-c(colnames(.)[cols], all_of(lengthcol))) %>%
           left_join(wide.df, by = "ID") %>%
           mutate(lengths = case_when(
@@ -232,7 +219,7 @@ reference_clean2 <- function(dt){
             T ~ as.double(lengths))) %>%
           left_join(string.dt, by = "ID")
       } else { # UNSURE ABOUT THIS
-        df <- df %>%
+        dt <- dt %>%
           select(-c(colnames(.)[cols], lengthcol)) %>%
           left_join(wide.df, by = "ID") %>%
           mutate(lengths = case_when(
@@ -250,21 +237,20 @@ reference_clean2 <- function(dt){
       # The issue is filling this into here even though it is the exact same size
       # df[,..colname] <- out
 
-      df <- reassign_value(df, i)
-      colnames(df)[which(colnames(df) == "lengths")] <- lengthcol
+      dt <- reassign_value(dt, i)
+      colnames(dt)[which(colnames(dt) == "lengths")] <- lengthcol
       MIN <- paste0(columns[i], "1")
-      df <- df %>%
+      dt <- dt %>%
         select(-c(MIN:MAX), -column.lengths[i])
       # Not MAX_OG, it seems
 
       y = select(dt, ID)
-      dt <- data.table(df)
+      dt <- data.table(dt)
       colname <- columns[i]
       x = dt[,..colname]
       lengthdt <- pmap_dfr(list(x, y), index.lengths)
       colnames(lengthdt)[1] <- paste0(columns[i], ".lengths")
       dt <- left_join(dt, lengthdt, by = "ID")
-      df <- data.frame(dt)
     }
   }
 
