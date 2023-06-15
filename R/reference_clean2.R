@@ -160,6 +160,10 @@ reference_clean2 <- function(dt){
   dt <- merge(dt,authorlengths,by = 'ID',all.x = T)
   dt$author.lengths <- ifelse(is.na(dt$author.lengths), 0, dt$author.lengths)
 
+
+
+  #### TYLER NOTE -- THIS IS WHERE I BOGGED DOWN --- #####
+
   #### TYLER NOTE -- I'N NOT SURE WHAT THIS DOES ANYMORE ####
   if(max(dt$author.lengths) > 1){
     MAX_OG[length(MAX_OG)+1] <- paste0("author", max(dt$author.lengths))
