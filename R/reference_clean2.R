@@ -1,8 +1,8 @@
 #' Clean Anystyle output
 #'
-#' Runs through columns of the Anystyle output (c("date", "url", "title", "container", "publisher", "doi")) and cleans them. Steps include identifying the lengths of different lists in each reference to unlist and unnest them to create sensible references.
+#' Version 2,runs through columns of the Anystyle output (c("date", "url", "title", "container", "publisher", "doi")) and cleans them. Steps include identifying the lengths of different lists in each reference to unlist and unnest them to create sensible references.
 #'
-#' @param dt data table from the reference_compile() function
+#' @param dt data.table from the reference_compile() function
 #'
 #' @return data table
 #' @import data.table
@@ -13,11 +13,8 @@
 #' @importFrom purrr pmap_dfr
 #' @import tidyr
 #' @examples cleaned_dt <- reference_clean(dt)
-#'
 #' @export
-load('data/working_references.RData')
-library(data.table)
-dt <- working_references
+
 reference_clean2 <- function(dt){
   if(all(class(dt)!='data.table')){stop('please provide a data.table object')}
   #source("R/clean_functions.R") these are now below
@@ -150,85 +147,53 @@ reference_clean2 <- function(dt){
   ### Longer than 75 or shorter than 3 characters
   authordt$author.clean <- ifelse(nchar(authordt$author.clean) > 75 | nchar(authordt$author.clean) < 3, NA, authordt$author.clean)
   authordt <- authordt[!is.na(authordt$author.clean),]
-
+  authordt$author <- authordt$author.clean
   # Removing duplicate and NAs, so lengthening and then widening (probably inefficient)
   # so that we can recount lengths and re-run the matching logic
-  columns <- c(columns, "author.clean")
+  columns <- c(columns, "author")
   column.lengths <- c(column.lengths, "author.lengths")
   authorlengths <- authordt[,.N,by=.(ID)]
   setnames(authorlengths,'N','author.lengths')
   dt <- merge(dt,authorlengths,by = 'ID',all.x = T)
   dt$author.lengths <- ifelse(is.na(dt$author.lengths), 0, dt$author.lengths)
 
-
-
-  #### TYLER NOTE -- THIS IS WHERE I BOGGED DOWN --- #####
-
-  #### TYLER NOTE -- I'N NOT SURE WHAT THIS DOES ANYMORE ####
-  if(max(dt$author.lengths) > 1){
-    MAX_OG[length(MAX_OG)+1] <- paste0("author", max(dt$author.lengths))
-  } else { MAX_OG[length(MAX_OG)+1] <- "author"}
-
   for(i in 1:length(columns)){
+    #print(columns[i])
     coldetect <- paste0(columns[i], "(?![\\.|url])|", columns[i], "\\d+")
-    cols = which(str_detect(colnames(dt), coldetect))
-    cols = cols[!(str_detect(colnames(dt)[cols], "doiurl"))]
+    cols = (str_subset(colnames(dt), coldetect))
+    cols = cols[!(str_detect(cols, "doiurl"))]
     if(max(dt[, column.lengths[i],with = F]) > 1){
-      if(columns[i] != "author.clean"){
+      if(columns[i] != "author"){
         abbr.dt <- dt[!(is.na(paste0(columns[i], "1")) & is.na(paste0(columns[i], "2"))),]
-        abbr.dt <- abbr.dt[,c('ID',colnames(abbr.dt)[cols]),with = F] %>%
-          pivot_longer(cols = 2:ncol(.),
-                       names_to = paste0(columns[i],".number"),
-                       values_to = columns[i]) %>%
-        dplyr::select(-paste0(columns[i],".number"))
+        abbr.dt <- abbr.dt[,c('ID',cols),with = F]
+        abbr.dt <- melt(abbr.dt,id.vars = 'ID',variable.name = paste0(columns[i],".number"),value.name =  columns[i])
+        abbr.dt <- abbr.dt[,-'date.number']
       } else {abbr.dt <- authordt}
 
-      wide.df <- abbr.dt %>%
-        #unique() %>%
-        #filter(!is.na(eval(parse(text = colnames(.)[2])))) %>% longer than needed
-        filter(!is.na(.[2])) %>%
-        group_by(ID) %>%
-        mutate(number = paste0(columns[i], row_number())) %>%
-        pivot_wider(names_from = number,
-                    values_from = columns[i]) %>%
-        ungroup()
+      abbr.dt <- abbr.dt[!is.na(abbr.dt[[columns[i]]]),]
+      newname <- 'number'
+      abbr.dt[,(newname):=lapply(.SD,rank,ties.method = 'first'),by=.(ID),.SDcols = c('ID')]
+      abbr.dt[[newname]] <- paste0(columns[i],abbr.dt[[newname]])
+      wide.dt <- dcast(abbr.dt,ID ~ number,value.var =  columns[[i]] )
+      cols.wide <- grep(paste0(columns[i], "\\d+"), colnames(wide.dt))
+      last <- length(wide.dt[,cols.wide,with = F])
+      MAX <- colnames(wide.dt[,cols.wide,with = F])[last]
 
-      cols.wide <- grep(paste0(columns[i], "\\d+"), colnames(wide.df))
-      last <- length(wide.df[,cols.wide])
-      MAX <- colnames(wide.df[,cols.wide])[last]
-
-      # Re-number the lengths
-      wide.df$lengths = NA
-      for(m in 1:nrow(wide.df)){
-        for(j in cols.wide){
-          if(is.na(wide.df$lengths[m]) & is.na(wide.df[m,j])){
-            wide.df$lengths[m] <- j-cols.wide[1]
-          } else {next}
-        }
-      }
-      wide.df$lengths <- ifelse(is.na(wide.df$lengths), length(cols),
-                                wide.df$lengths)
+      wide.dt$lengths <- rowSums(!is.na(wide.dt[,cols.wide,with = F]))
 
       ## Collapsing columns into lists again
-      run.df <- wide.df %>% filter(lengths > 1)
-      if(nrow(run.df) > 0){
-        string.dt <- collapse_column(run.df, columns[i])
+      run.dt <- wide.dt[lengths>1,]
+      if(nrow(run.dt) > 0){
+        string.dt <- collapse_column(run.dt, columns[i])
         colnames(string.dt) <- c(columns[i], "ID")
         lengthcol <- paste0(columns[i], ".lengths")
-        dt <- dt %>%
-          select(-c(colnames(.)[cols], all_of(lengthcol))) %>%
-          left_join(wide.df, by = "ID") %>%
-          mutate(lengths = case_when(
-            is.na(lengths) ~ 0,
-            T ~ as.double(lengths))) %>%
-          left_join(string.dt, by = "ID")
+        dt <- merge(dt[,-c(cols,lengthcol),with = F],wide.dt,all.x = T,by = 'ID')
+        dt$lengths[is.na(dt$lengths)]<-0
+        dt <- merge(dt,string.dt,all.x = T,by = 'ID')
       } else { # UNSURE ABOUT THIS
-        dt <- dt %>%
-          select(-c(colnames(.)[cols], lengthcol)) %>%
-          left_join(wide.df, by = "ID") %>%
-          mutate(lengths = case_when(
-            is.na(lengths) ~ 0,
-            T ~ as.double(lengths)))
+        dt[,-c(cols,lengthcol),with = F]
+        dt <- merge(dt[,-c(cols,lengthcol),with = F],wide.dt,all.x = T,by = 'ID')
+        dt$lengths[is.na(dt$lengths)]<-0
       }
       # I cannot get this to work in a reproducible way...
       #df <- data.table(df)
@@ -242,55 +207,55 @@ reference_clean2 <- function(dt){
       # df[,..colname] <- out
 
       dt <- reassign_value(dt, i)
+      dt <- as.data.table(dt)
       colnames(dt)[which(colnames(dt) == "lengths")] <- lengthcol
       MIN <- paste0(columns[i], "1")
-      dt <- dt %>%
-        select(-c(MIN:MAX), -column.lengths[i])
-      # Not MAX_OG, it seems
 
-      y = select(dt, ID)
-      dt <- data.table(dt)
+      dt <- dt[,-c(which(colnames(dt)==MIN):which(colnames(dt)==MAX),which(colnames(dt)==column.lengths[i])),with = F]
+
+      # Not MAX_OG, it seems
+      y <- dt[,'ID']
       colname <- columns[i]
       x = dt[,..colname]
       lengthdt <- pmap_dfr(list(x, y), index.lengths)
       colnames(lengthdt)[1] <- paste0(columns[i], ".lengths")
-      dt <- left_join(dt, lengthdt, by = "ID")
+      dt <- merge(dt, lengthdt, all.x = T,by = "ID")
     }
   }
-
-  dt <- data.table(df) %>% select(-nested)
+  dt[,nested:=NULL]
+  #dt <- data.table(df) %>% select(-nested)
   # Look for congruent cases using matching_fx
-  lengths <- list()
-  for(i in 1:(length(columns)+1)){
-    if(i <= length(columns)){
-      col <- column.lengths[i]
-      lengths[i] <- dt[,..col]
-    } else {
-      lengths[i] <- dt[,"ID"]
-    }
-  }
-  lengths <- lengths[-7] # exclude author
+  ### exclude author
+  lengths <- as.list(dt[,..column.lengths[column.lengths!='author.lengths']])
+  lengths$ID <- dt$ID
+  names(lengths) <- NULL
+  # Look for congruent cases using matching_fx
   match.test <- pmap_dfr(lengths, matching_fx)
-  dt <- left_join(dt, match.test, by = "ID")
 
+  dt <- merge(dt, match.test, all.x = T,by = "ID")
+
+#### NOTE TYLER ADDED THIS SIMPLE TOGGLE -- SOLUTION IS TO NOT HAVE 'DOI1' CREATED ###
+  dt$doi <- dt$doi1
   # Go ahead and collapse authors before unnesting
   dt$author.new <- rep("", nrow(dt))
   dt$date.new <- rep("", nrow(dt))
-  for(i in 1:nrow(dt)){
-    dt[i,"author.new"] <- paste(unlist(dt[i,author]), collapse='; ')
-    dt[i,"date.new"] <- suppressWarnings(str_extract(dt[i,date], "\\d{4}"))
-  }
+
+  dt$author.new <- sapply(dt$author,function(x) paste(na.omit(x),collapse = '; '))
+  dt$date.new <- sapply(dt$date,function(x) str_extract(x,"\\d{4}"))
+  dt$author.new[dt$author.new==''] <- NA
 
   #### making character vector allows for cases with missing entries (vs. select() method)
   vars <- c('ID','author.new','date.new','title','container','publisher','doi','url',
   'File',' author.lengths','date.lengths','title.lengths',
   'container.lengths','publisher.lengths','doi.lengths','url.lengths','nested')
-  dt <- as.data.table(dt)
+
   dt <- dt[,colnames(dt) %in% vars,with = F]
   setnames(dt,c('author.new','date.new'),c('author','date'),skip_absent = T)
-
-  run.dt <- dt %>% filter(nested == "tu_even_unn" | nested == "ty_even_unn")
-  paste.dt <- anti_join(dt, run.dt)
+  run.dt <- dt[nested %in% c("tu_even_unn","ty_even_unn"),]
+  #run.dt <- dt %>% filter(nested == "tu_even_unn" | nested == "ty_even_unn")
+  #paste.dt <- anti_join(dt, run.dt)
+  #anti_join in R
+  paste.dt <- dt[!run.dt, on = .(ID)]
 
   # For everything else that won't be unnested, collapse
   # Most of this is only length of 1 and so it won't matter, but it will collapse whatever hasn't yet been collapsed
@@ -300,6 +265,8 @@ reference_clean2 <- function(dt){
   ti = paste.dt[,title]
   c = paste.dt[,container]
   p = paste.dt[,publisher]
+
+
   doi = paste.dt[,doi]
   url = paste.dt[,url]
   File = paste.dt[,File]
@@ -335,22 +302,25 @@ reference_clean2 <- function(dt){
 
   # Reassign ID since we have lost some values
 
-  df <- data.frame(dt)
+  dt <- data.table(dt)
+
   # Squish together lists
   squish.cols <- c("title", "container", "publisher", "author")
-  squish.cols <- which(colnames(df) %in% squish.cols)
-  df[,squish.cols] <- suppressWarnings(sapply(df[,squish.cols], str_squish))
-  df[,squish.cols] <- suppressWarnings(sapply(df[,squish.cols], encoding_change))
-  df[,squish.cols[2:4]] <- suppressWarnings(sapply(df[,squish.cols[2:4]], final_clean))
+  #squish.cols <- which(colnames(df) %in% squish.cols)
+  dt[,(squish.cols):=lapply(.SD,str_squish),.SDcols = squish.cols]
+  dt[,(squish.cols):=lapply(.SD,encoding_change),.SDcols = squish.cols]
+  dt[,(squish.cols[squish.cols!='title']):=lapply(.SD,final_clean),.SDcols = squish.cols[squish.cols!='title']]
 
-  # Make sure there are
-  df <- data.frame(sapply(df, rpl_na))
+
+#### FLAG FOR FIX -- NA'S ARE TREATED LIKE STRINGS, SO str_tot_title makes NA --> Na.
+  #### for now, added that to rpl_na code to catch, but need to make sure NAs are treated properly throughout
+
+# Make sure there are
+  dt <- data.table(sapply(dt, rpl_na))
   # Remove anything that has basically no data in any column
-  nothing <- is.na(df$title) & is.na(df$author) & is.na(df$publisher) & is.na(df$doi) & is.na(df$url)
-  df <- df[!nothing,]
-  df <- unique(df)
-  df$ID <- 1:nrow(df)
-  dt <- data.table(df)
+  nothing <- is.na(dt$title) & is.na(dt$author) & is.na(dt$publisher) & is.na(dt$doi) & is.na(dt$url)
+  dt <- dt[!nothing,]
+  dt <- unique(dt)
+  dt$ID <- 1:nrow(dt)
   return(dt)
-
 }

@@ -390,7 +390,7 @@ rm_word <- function(x){
 }
 
 rpl_na <- function(x){
-  ifelse(x == "NA" | x == "", NA, x)
+  ifelse(x == "NA" | x == "" | x == 'Na', NA, x)
 }
 
 rm.auth.word <- c( '^[a-z]\\.\\s', # Many authors begind with a. b. or c. etc as if its a list.
@@ -465,7 +465,8 @@ rm.row <- paste(rm.row, collapse="|")
 
 columns4fx <- columns <- c("date", "url", "title", "container", "publisher",
                            "doi", "author")
-reassign_value <- function(df, i){
+reassign_value <- function(dt, i){
+  df <- as.data.frame(dt)
   if(columns4fx[i] == "date"){
     df$date <- ifelse(df$lengths == 0, NA,
                       ifelse(df$lengths == 1,
@@ -647,7 +648,7 @@ rm.row2 <- paste(rm.row2, collapse="|")
 conference <- paste(c("[Cc]onference(?!\\sCenter)", "[Cc]onference(?!\\sHall)", "[Ss]ymposium"), collapse = "|")
 
 final_clean <- function(x){
-    x <- trimws(toTitleCase(str_remove_all(x,'\\.|,|;|\\*|-|"|\\(|\\)|\\+|\\-|\\/|\\\\|:|\\[|\\]')))
+    x <- trimws(str_to_title(str_remove_all(x,'\\.|,|;|\\*|-|"|\\(|\\)|\\+|\\-|\\/|\\\\|:|\\[|\\]')))
     x <- str_remove_all(x, "'")
     x <- str_replace_all(x, "\\&", "and")
     str_squish(x)

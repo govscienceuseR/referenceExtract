@@ -15,35 +15,31 @@
 #' @examples cleaned_dt <- reference_clean(dt)
 #'
 #' @export
-load('data/working_references.RData')
-library(data.table)
-dt <- working_references
-reference_clean2 <- function(dt){
-  if(all(class(dt)!='data.table')){stop('please provide a data.table object')}
+
+reference_clean <- function(dt){
   #source("R/clean_functions.R") these are now below
   # Add ID and replace NAs
-  if(any(colnames(dt)=='container-title')){setnames(dt,'container-title','container')}
-  vars <- c('author','title','date','publisher','container','doi','url','File')
-  vars <- vars[vars %in% colnames(dt)]
-  dt <- dt[,colnames(dt) %in% vars,with = F]
-  dt$ID = 1:nrow(dt)
-  #### replace NULL with NA to act as placeholder
-  dt[ , (vars) := lapply(.SD, null2NA), .SDcols = vars]
-
-  columns <- c("date", "url", "title", "container", "publisher", "doi")
-  lt <- dt[,lapply(.SD,function(x)sapply(x,length)),.SDcols = columns]
-  colnames(lt) <- paste0(colnames(lt),'.lengths')
-  dt <- cbind(dt,lt)
-
+  dt <- dt %>%
+    data.table() %>%
+    rename("container" = "container-title") %>%
+    select(author, title, date, publisher, container,
+           doi, url, File)  %>%
+    mutate(ID = 1:nrow(.),
+           title = ifelse(sapply(title,is.null),NA,title),
+           container = ifelse(sapply(container,is.null),NA,container),
+           publisher = ifelse(sapply(publisher,is.null),NA,publisher),
+           date = ifelse(sapply(date,is.null),NA,date),
+           doi = ifelse(sapply(doi,is.null),NA,doi),
+           url = ifelse(sapply(url,is.null),NA,url))
 
   # Get list lengths of each of the columns
-  y = dt[,'ID',with = F]
-
-   for(i in columns){
+  y = select(dt, ID)
+  columns <- c("date", "url", "title", "container", "publisher", "doi")
+  for(i in columns){
     x = dt[,..i]
     lengthdt <- pmap_dfr(list(x, y), index.lengths)
     colnames(lengthdt)[1] <- paste0(i, ".lengths")
-    dt <- merge(dt, lengthdt,all.x = T, by = "ID")
+    dt <- left_join(dt, lengthdt, by = "ID")
   }
 
   # Identify longest length in any column and filter to get get rid
@@ -52,12 +48,11 @@ reference_clean2 <- function(dt){
   MAX <- max(sapply(dt[, ..column.lengths], max))
   TITLE_MAX <- max(dt$title.lengths)
 
-  dt <- dt[date.lengths <= TITLE_MAX,]
-  dt <- dt[url.lengths <= TITLE_MAX,]
-  dt <- dt[container.lengths <= TITLE_MAX,]
-  dt <- dt[container.lengths <= TITLE_MAX,]
-  dt <- dt[publisher.lengths <= TITLE_MAX,]
-  dt <- dt[doi.lengths <= TITLE_MAX,]
+  dt <- dt %>% filter(date.lengths <= TITLE_MAX,
+                      url.lengths <= TITLE_MAX,
+                      container.lengths <= TITLE_MAX,
+                      publisher.lengths <= TITLE_MAX,
+                      doi.lengths <= TITLE_MAX)
 
   # Look for congruent cases using matching_fx
   lengths <- list()
@@ -69,9 +64,8 @@ reference_clean2 <- function(dt){
       lengths[i] <- dt[,"ID"]
     }
   }
-
   match.test <- pmap_dfr(lengths, matching_fx)
-  dt <- merge(dt, match.test, all.x = T,by = "ID")
+  dt <- left_join(dt, match.test, by = "ID")
 
   # have to do this because the columns of DT do not cooperate well with some
   # note that I htink that's fixed by calling dt[,col,with = F]
@@ -151,26 +145,27 @@ reference_clean2 <- function(dt){
   #df[,cols] <- lapply(df[,cols], extract_doi)}
   # Specific filtering: Authors
   authordf <- pmap_dfr(list(df[,"author"], df[,"ID"]), separate_author)
-  authordf$author <- str_remove_all(base::trimws(authordf$author), rm.auth.word)
-  authordf$author <- ifelse(str_detect(base::trimws(authordf$author), rm.row), NA_character_, base::trimws(authordf$author))
-  # Get rid of all non-word characters except: spaces, commas, &s -- got this from the internet
-  authordf$author <- str_remove_all(authordf$author, '[\\p{P}\\p{S}&&[^,& ]]')
-  authordf$author <- base::trimws(authordf$author)
-  authordf$author <- ifelse(authordf$author == "", NA_character_, authordf$author)
-  # Then run these again...
-  authordf$author <- str_remove_all(base::trimws(authordf$author), rm.auth.word)
-  authordf$author <- ifelse(str_detect(base::trimws(authordf$author), rm.row),
-                            NA_character_, base::trimws(authordf$author))
-  ### Longer than 75 or shorter than 3 characters
-  authordf$author <- ifelse(nchar(authordf$author) > 75 | nchar(authordf$author) < 3, NA, authordf$author)
-  authordf <- authordf[!is.na(authordf$author),]
+  authordf <- authordf %>%
+    mutate(author = str_remove_all(base::trimws(author), rm.auth.word)) %>%
+    mutate(author = ifelse(str_detect(base::trimws(author), rm.row),
+                           NA_character_, base::trimws(author))) %>%
+    # Get rid of all non-word characters except: spaces, commas, &s -- got this from the internet
+    mutate(author = str_remove_all(author, '[\\p{P}\\p{S}&&[^,& ]]')) %>%
+    mutate(author = base::trimws(author)) %>%
+    mutate(author = ifelse(author == "", NA_character_, author)) %>%
+    # Then run these again...
+    mutate(author = str_remove_all(base::trimws(author), rm.auth.word)) %>%
+    mutate(author = ifelse(str_detect(base::trimws(author), rm.row),
+                           NA_character_, base::trimws(author))) %>%
+    ### Longer than 75 or shorter than 3 characters
+    mutate(author = ifelse(nchar(author) > 75 | nchar(author) < 3, NA, author)) %>%
+    filter(!is.na(author))
 
   # Removing duplicate and NAs, so lengthening and then widening (probably inefficient)
   # so that we can recount lengths and re-run the matching logic
   columns <- c(columns, "author")
   column.lengths <- c(column.lengths, "author.lengths")
-  authorlengths <- authordf %>% group_by(ID) %>% count()  %>% as.data.table()
-  setnames(authorlengths,'n','author.lengths',skip_absent = T)
+  authorlengths <- authordf %>% group_by(ID) %>% count() %>% rename(author.lengths = n)
   df <- df %>% left_join(authorlengths, by = "ID")
   df$author.lengths <- ifelse(is.na(df$author.lengths), 0, df$author.lengths)
   if(max(df$author.lengths) > 1){
@@ -291,13 +286,11 @@ reference_clean2 <- function(dt){
     dt[i,"date.new"] <- suppressWarnings(str_extract(dt[i,date], "\\d{4}"))
   }
 
-  #### making character vector allows for cases with missing entries (vs. select() method)
-  vars <- c('ID','author.new','date.new','title','container','publisher','doi','url',
-  'File',' author.lengths','date.lengths','title.lengths',
-  'container.lengths','publisher.lengths','doi.lengths','url.lengths','nested')
-  dt <- as.data.table(dt)
-  dt <- dt[,colnames(dt) %in% vars,with = F]
-  setnames(dt,c('author.new','date.new'),c('author','date'),skip_absent = T)
+
+  dt <- select(dt, ID, author.new, date.new, title, container, publisher, doi, url, #doiurl,
+               File,  author.lengths, date.lengths, title.lengths,
+               container.lengths, publisher.lengths, doi.lengths, url.lengths, nested) %>%
+    rename(author = author.new, date = date.new)
 
   run.dt <- dt %>% filter(nested == "tu_even_unn" | nested == "ty_even_unn")
   paste.dt <- anti_join(dt, run.dt)
@@ -335,13 +328,12 @@ reference_clean2 <- function(dt){
       }
       run.un <- rbind(un, run.un)
     }
-
-    run.un <- run.un[,c('author','year','title','container','publisher','doi','url','File','nested')]
-
+    run.un <- select(run.un, author, year, title, container,
+                     publisher, doi, url, File, nested)
     dt <- rbind(run.un, paste.un) %>% select(-nested)
   } else {
-      dt <- paste.un %>% select(-nested)
-    }
+    dt <- paste.un %>% select(-nested)
+  }
 
   # Reassign ID since we have lost some values
 
@@ -356,11 +348,11 @@ reference_clean2 <- function(dt){
   # Make sure there are
   df <- data.frame(sapply(df, rpl_na))
   # Remove anything that has basically no data in any column
-  nothing <- is.na(df$title) & is.na(df$author) & is.na(df$publisher) & is.na(df$doi) & is.na(df$url)
-  df <- df[!nothing,]
+  df <- filter(df, !(is.na(title) & is.na(author) & is.na(publisher) & is.na(doi) & is.na(url)))
   df <- unique(df)
   df$ID <- 1:nrow(df)
   dt <- data.table(df)
   return(dt)
 
 }
+
