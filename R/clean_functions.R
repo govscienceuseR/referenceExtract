@@ -147,9 +147,14 @@ encoding_change <- function(x){
 }
 
 separate_author2 <- function(dt){
+  possible_vars <- c('family','given','particle','literal','suffix','others')
   author_sub <- dt[!sapply(dt$author,function(x) identical(x,list())),.(author,ID)]
   author_sub <- author_sub[!is.na(author),]
   author_stack <- rbindlist(author_sub$author,fill = T)
+  cols_to_add <- possible_vars[!possible_vars  %in% colnames(author_stack)]
+  for(add in cols_to_add){
+    author_stack[[add]]<-NA_character_
+  }
   author_stack$ID <- rep(author_sub$ID,sapply(author_sub$author,nrow))
 
   author_stack$others[is.na(author_stack$others)] <- NA
@@ -488,7 +493,7 @@ reassign_value <- function(dt, i){
                                   df[,paste0(columns4fx[i], "1")],
                                   df[,columns4fx[i]]))
   } else if(columns4fx[i] == "publisher"){
-    df$pubisher <- ifelse(df$lengths == 0, NA,
+    df$publisher <- ifelse(df$lengths == 0, NA,
                           ifelse(df$lengths == 1,
                                  df[,paste0(columns4fx[i], "1")],
                                  df[,columns4fx[i]]))

@@ -73,7 +73,7 @@ reference_clean2 <- function(dt){
   cols = str_subset(colnames(dt), "url(?!\\.)|url\\d+")
   ## New columns for DOIs
   if(length(cols) == 1){
-    dt$doiurl <- extract_doi_url(dt[[cols]])
+    dt$doiurl1 <- extract_doi_url(dt[[cols]])
     dt[[cols]] <- sapply(dt[[cols]], rm_url) # using s versus l apply messed with me
     dt[[cols]] <- sapply(dt[[cols]], keep_urls)
     doiurlcols <- which(colnames(dt) == "doiurl")
@@ -131,7 +131,6 @@ reference_clean2 <- function(dt){
   } #else {
   #df[,cols] <- lapply(df[,cols], extract_doi)}
   # Specific filtering: Authors
-
   authordt <- separate_author2(dt)
   authordt$author.clean <- str_remove_all(base::trimws(authordt$author.clean), rm.auth.word)
   authordt$author.clean <- ifelse(str_detect(base::trimws(authordt$author.clean), rm.row), NA_character_, base::trimws(authordt$author.clean))
@@ -157,17 +156,18 @@ reference_clean2 <- function(dt){
   dt <- merge(dt,authorlengths,by = 'ID',all.x = T)
   dt$author.lengths <- ifelse(is.na(dt$author.lengths), 0, dt$author.lengths)
 
+#### note that change here to key on length of cols and then rename cols at bottom of length cols == 1 is because
+  ### the if the code only finds lenght = 1, it still makes column lke "doi1" but then there is no "doi2". So
+  ### then it's desirable to just rename again as "doi", which normally happens in the for() call below
+  ### such that doi1 and doi2 are combined to doi and merged back in again
   for(i in 1:length(columns)){
-    #print(columns[i])
-    coldetect <- paste0(columns[i], "(?![\\.|url])|", columns[i], "\\d+")
-    cols = (str_subset(colnames(dt), coldetect))
-    cols = cols[!(str_detect(cols, "doiurl"))]
-    if(max(dt[, column.lengths[i],with = F]) > 1){
+    cols <- str_subset(colnames(dt),paste0('^',columns[i],'($|[0-9])'))
+    if(length(cols)>1){
       if(columns[i] != "author"){
         abbr.dt <- dt[!(is.na(paste0(columns[i], "1")) & is.na(paste0(columns[i], "2"))),]
         abbr.dt <- abbr.dt[,c('ID',cols),with = F]
         abbr.dt <- melt(abbr.dt,id.vars = 'ID',variable.name = paste0(columns[i],".number"),value.name =  columns[i])
-        abbr.dt <- abbr.dt[,-'date.number']
+        abbr.dt <- abbr.dt[,(paste0(columns[i],".number")):=NULL]
       } else {abbr.dt <- authordt}
 
       abbr.dt <- abbr.dt[!is.na(abbr.dt[[columns[i]]]),]
@@ -220,7 +220,7 @@ reference_clean2 <- function(dt){
       lengthdt <- pmap_dfr(list(x, y), index.lengths)
       colnames(lengthdt)[1] <- paste0(columns[i], ".lengths")
       dt <- merge(dt, lengthdt, all.x = T,by = "ID")
-    }
+    }else{setnames(dt,cols,columns[i])}
   }
   dt[,nested:=NULL]
   #dt <- data.table(df) %>% select(-nested)
@@ -235,7 +235,7 @@ reference_clean2 <- function(dt){
   dt <- merge(dt, match.test, all.x = T,by = "ID")
 
 #### NOTE TYLER ADDED THIS SIMPLE TOGGLE -- SOLUTION IS TO NOT HAVE 'DOI1' CREATED ###
-  dt$doi <- dt$doi1
+
   # Go ahead and collapse authors before unnesting
   dt$author.new <- rep("", nrow(dt))
   dt$date.new <- rep("", nrow(dt))
