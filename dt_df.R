@@ -15,7 +15,7 @@ df[,columns[1]]
 dt[,columns[1]]
 # Though directly inputting the name of the column prints the column itself.
 dt[,"year"]
-# One workaround I've been using that works, for some reason, it assigning
+# One workaround I've been using that works, for some reason, is assigning
 # the iterated value to an object, then subsetting that object
 single_col <- columns[1]
 # Again, this works the same for df

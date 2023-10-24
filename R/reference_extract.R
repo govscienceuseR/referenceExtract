@@ -5,7 +5,7 @@
 #' @param files A vector of PDF file names to be evaluated
 #' @param doc_dir A directory containing PDFs
 #' @param ref_dir The name of the directory where reference extractions are to be exported
-#' @param layout Specification of whether PDFs should be evaluated as no layout ("none"), or layout with two columns ("column")
+#' @param layout Specification of whether PDFs should be evaluated as no layout ("no_layout"), or layout with two columns ("layout")
 #' @param cores how many cores you want to use in pblapply
 #' @return JSON files in ref_dir
 #'
