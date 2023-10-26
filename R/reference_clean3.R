@@ -162,7 +162,7 @@ reference_clean3 <- function(dt){
   ### such that doi1 and doi2 are combined to doi and merged back in again
   for(i in 1:length(columns)){
     cols <- str_subset(colnames(dt),paste0('^',columns[i],'($|[0-9])'))
-    if(length(cols)>1){
+    # LIZA REMOVED this conditional because it stopped the adding of the new author data frame
       if(columns[i] != "author"){
         abbr.dt <- dt[!(is.na(paste0(columns[i], "1")) & is.na(paste0(columns[i], "2"))),]
         abbr.dt <- abbr.dt[,c('ID',cols),with = F]
@@ -220,8 +220,7 @@ reference_clean3 <- function(dt){
       lengthdt <- pmap_dfr(list(x, y), index.lengths)
       colnames(lengthdt)[1] <- paste0(columns[i], ".lengths")
       dt <- merge(dt, lengthdt, all.x = T,by = "ID")
-    }else{setnames(dt,cols,columns[i])}
-  }
+    }
   dt[,nested:=NULL]
   #dt <- data.table(df) %>% select(-nested)
   # Look for congruent cases using matching_fx
