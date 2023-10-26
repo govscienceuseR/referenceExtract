@@ -201,7 +201,7 @@ reference_clean3 <- function(dt){
       dt <- merge(dt[,-c(cols,lengthcol),with = F],wide.dt,all.x = T,by = 'ID')
       dt$lengths[is.na(dt$lengths)]<-0
     }
-    dt <- reassign_value(dt, i)
+    dt <- reassign_value(dt, columns[i], MIN)
     dt <- as.data.table(dt)
     colnames(dt)[which(colnames(dt) == "lengths")] <- lengthcol
 

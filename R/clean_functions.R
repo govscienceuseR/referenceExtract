@@ -468,46 +468,88 @@ rm.row <- c( "^[0-9]+$", # only digits
 rm.row <- paste(rm.row, collapse="|")
 
 
-columns4fx <- columns <- c("date", "url", "title", "container", "publisher",
+columns4fx <- c("date", "url", "title", "container", "publisher",
                            "doi", "author")
 reassign_value <- function(dt, i){
   df <- as.data.frame(dt)
   if(columns4fx[i] == "date"){
     df$date <- ifelse(df$lengths == 0, NA,
                       ifelse(df$lengths == 1,
-                             df[,MIN],
+                             df[,paste0(columns4fx[i], "1")],
                              df[,columns4fx[i]]))
   } else if(columns4fx[i] == "url"){
     df$url <- ifelse(df$lengths == 0, NA,
                      ifelse(df$lengths == 1,
-                            df[,MIN],
+                            df[,paste0(columns4fx[i], "1")],
                             df[,columns4fx[i]]))
   } else if(columns4fx[i] == "title"){
     df$title <- ifelse(df$lengths == 0, NA,
                        ifelse(df$lengths == 1,
-                              df[,MIN],
+                              df[,paste0(columns4fx[i], "1")],
                               df[,columns4fx[i]]))
   } else if(columns4fx[i] == "container"){
     df$container <- ifelse(df$lengths == 0, NA,
                            ifelse(df$lengths == 1,
-                                  df[,MIN],
+                                  df[,paste0(columns4fx[i], "1")],
                                   df[,columns4fx[i]]))
   } else if(columns4fx[i] == "publisher"){
     df$publisher <- ifelse(df$lengths == 0, NA,
                            ifelse(df$lengths == 1,
-                                  df[,MIN],
+                                  df[,paste0(columns4fx[i], "1")],
                                   df[,columns4fx[i]]))
   } else if(columns4fx[i] == "doi"){
     df$doi <- ifelse(df$lengths == 0, NA,
                      ifelse(df$lengths == 1,
-                            df[,MIN],
+                            df[,paste0(columns4fx[i], "1")],
                             df[,columns4fx[i]]))
   } else if(columns4fx[i] == "author"){
+    df$author <- ifelse(df$lengths == 0, NA,
+                        ifelse(df$lengths == 1,
+                               df[,paste0(columns4fx[i], "1")],
+                               df[,columns4fx[i]]))
+  }
+  return(df)
+}
+
+
+reassign_value2 <- function(dt, colname, min_col){
+  df <- as.data.frame(dt)
+  if(colname == "date"){
+    df$date <- ifelse(df$lengths == 0, NA,
+                      ifelse(df$lengths == 1,
+                             df[,MIN],
+                             df[,colname]))
+  } else if(colname == "url"){
+    df$url <- ifelse(df$lengths == 0, NA,
+                     ifelse(df$lengths == 1,
+                            df[,MIN],
+                            df[,colname]))
+  } else if(colname == "title"){
+    df$title <- ifelse(df$lengths == 0, NA,
+                       ifelse(df$lengths == 1,
+                              df[,MIN],
+                              df[,colname]))
+  } else if(colname == "container"){
+    df$container <- ifelse(df$lengths == 0, NA,
+                           ifelse(df$lengths == 1,
+                                  df[,MIN],
+                                  df[,colname]))
+  } else if(colname == "publisher"){
+    df$publisher <- ifelse(df$lengths == 0, NA,
+                           ifelse(df$lengths == 1,
+                                  df[,MIN],
+                                  df[,colname]))
+  } else if(colname == "doi"){
+    df$doi <- ifelse(df$lengths == 0, NA,
+                     ifelse(df$lengths == 1,
+                            df[,MIN],
+                            df[,colname]))
+  } else if(colname == "author"){
     # CHANGING THIS ti redefine min
     df$author <- ifelse(df$lengths == 0, NA,
                         ifelse(df$lengths == 1,
                                df[,MIN],
-                               df[,columns4fx[i]]))
+                               df[,colname]))
 
   }
   return(df)
