@@ -475,38 +475,40 @@ reassign_value <- function(dt, i){
   if(columns4fx[i] == "date"){
     df$date <- ifelse(df$lengths == 0, NA,
                       ifelse(df$lengths == 1,
-                             df[,paste0(columns4fx[i], "1")],
+                             df[,MIN],
                              df[,columns4fx[i]]))
   } else if(columns4fx[i] == "url"){
     df$url <- ifelse(df$lengths == 0, NA,
                      ifelse(df$lengths == 1,
-                            df[,paste0(columns4fx[i], "1")],
+                            df[,MIN],
                             df[,columns4fx[i]]))
   } else if(columns4fx[i] == "title"){
     df$title <- ifelse(df$lengths == 0, NA,
                        ifelse(df$lengths == 1,
-                              df[,paste0(columns4fx[i], "1")],
+                              df[,MIN],
                               df[,columns4fx[i]]))
   } else if(columns4fx[i] == "container"){
     df$container <- ifelse(df$lengths == 0, NA,
                            ifelse(df$lengths == 1,
-                                  df[,paste0(columns4fx[i], "1")],
+                                  df[,MIN],
                                   df[,columns4fx[i]]))
   } else if(columns4fx[i] == "publisher"){
     df$publisher <- ifelse(df$lengths == 0, NA,
-                          ifelse(df$lengths == 1,
-                                 df[,paste0(columns4fx[i], "1")],
-                                 df[,columns4fx[i]]))
+                           ifelse(df$lengths == 1,
+                                  df[,MIN],
+                                  df[,columns4fx[i]]))
   } else if(columns4fx[i] == "doi"){
     df$doi <- ifelse(df$lengths == 0, NA,
                      ifelse(df$lengths == 1,
-                            df[,paste0(columns4fx[i], "1")],
+                            df[,MIN],
                             df[,columns4fx[i]]))
   } else if(columns4fx[i] == "author"){
+    # CHANGING THIS ti redefine min
     df$author <- ifelse(df$lengths == 0, NA,
                         ifelse(df$lengths == 1,
-                               df[,paste0(columns4fx[i], "1")],
+                               df[,MIN],
                                df[,columns4fx[i]]))
+
   }
   return(df)
 }

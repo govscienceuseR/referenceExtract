@@ -23,7 +23,8 @@ reference_clean3 <- function(dt){
   vars <- c('author','title','date','publisher','container','doi','url','File')
   vars <- vars[vars %in% colnames(dt)]
   dt <- dt[,colnames(dt) %in% vars,with = F]
-  dt$ID = 1:nrow(dt)
+
+  dt$ID =  1:nrow(dt)
   #### replace NULL with NA to act as placeholder
   dt[ , (vars) := lapply(.SD, null2NA), .SDcols = vars]
 
@@ -119,7 +120,7 @@ reference_clean3 <- function(dt){
   #df[,cols] <- data.frame(lapply(df[,cols], rm_word))
   #df[,cols] <- data.frame(lapply(df[,cols], rm_row))
   # Specific filtering: DOI
-  cols = str_subset(colnames(dt), "doi(?![\\.|url])|doi\\d+")
+  cols = str_subset(colnames(dt), "doiurl|doi\\d+")
 
   # Need to compare df[,cols] to df[,doiurlcols]
   if(length(cols) == 1){
@@ -163,65 +164,64 @@ reference_clean3 <- function(dt){
   for(i in 1:length(columns)){
     cols <- str_subset(colnames(dt),paste0('^',columns[i],'($|[0-9])'))
     # LIZA REMOVED this conditional because it stopped the adding of the new author data frame
-      if(columns[i] != "author"){
-        abbr.dt <- dt[!(is.na(paste0(columns[i], "1")) & is.na(paste0(columns[i], "2"))),]
-        abbr.dt <- abbr.dt[,c('ID',cols),with = F]
-        abbr.dt <- melt(abbr.dt,id.vars = 'ID',variable.name = paste0(columns[i],".number"),value.name =  columns[i])
-        abbr.dt <- abbr.dt[,(paste0(columns[i],".number")):=NULL]
-      } else {abbr.dt <- authordt}
+    if(columns[i] != "author"){
+      abbr.dt <- dt[!(is.na(paste0(columns[i], "1")) & is.na(paste0(columns[i], "2"))),]
+      abbr.dt <- abbr.dt[,c('ID',cols),with = F]
+      abbr.dt <- melt(abbr.dt,id.vars = 'ID',variable.name = paste0(columns[i],".number"),value.name =  columns[i])
+      abbr.dt <- abbr.dt[,(paste0(columns[i],".number")):=NULL]
+    } else {abbr.dt <- authordt}
 
-      abbr.dt <- abbr.dt[!is.na(abbr.dt[[columns[i]]]),]
-      newname <- 'number'
-      abbr.dt[,(newname):=lapply(.SD,rank,ties.method = 'first'),by=.(ID),.SDcols = c('ID')]
-      abbr.dt[[newname]] <- paste0(columns[i],abbr.dt[[newname]])
-      wide.dt <- dcast(abbr.dt,ID ~ number,value.var =  columns[[i]] )
-      cols.wide <- grep(paste0(columns[i], "\\d+"), colnames(wide.dt))
-      last <- length(wide.dt[,cols.wide,with = F])
-      MAX <- colnames(wide.dt[,cols.wide,with = F])[last]
+    abbr.dt <- abbr.dt[!is.na(abbr.dt[[columns[i]]]),]
+    newname <- 'number'
+    abbr.dt[,(newname):=lapply(.SD,rank,ties.method = 'first'),by=.(ID),.SDcols = c('ID')]
+    # LIZA: Making number have leading zeros because the point made above becomes an issue later
+    leadingzero <- nchar(max(abbr.dt[[newname]]))
+    abbr.dt[[newname]] <- sprintf(paste0('%0.',leadingzero,'d'), abbr.dt[[newname]])
+    # LIZA: identifying max here because when done as a strong it identified author9 because of how R thinks about ranking characters/numbers e.g. author9 > author31
+    MAX <- paste0(columns[i], max(abbr.dt[[newname]]))
+    MIN <- paste0(columns[i], min(abbr.dt[[newname]]))
+    abbr.dt[[newname]] <- paste0(columns[i],abbr.dt[[newname]])
+    wide.dt <- dcast(abbr.dt,ID ~ number,value.var =  columns[[i]] )
+    cols.wide <- grep(paste0(columns[i], "\\d+"), colnames(wide.dt))
 
-      wide.dt$lengths <- rowSums(!is.na(wide.dt[,cols.wide,with = F]))
+    wide.dt$lengths <- rowSums(!is.na(wide.dt[,cols.wide,with = F]))
 
-      ## Collapsing columns into lists again
-      run.dt <- wide.dt[lengths>1,]
-      if(nrow(run.dt) > 0){
-        string.dt <- collapse_column(run.dt, columns[i])
-        colnames(string.dt) <- c(columns[i], "ID")
-        lengthcol <- paste0(columns[i], ".lengths")
-        dt <- merge(dt[,-c(cols,lengthcol),with = F],wide.dt,all.x = T,by = 'ID')
-        dt$lengths[is.na(dt$lengths)]<-0
-        dt <- merge(dt,string.dt,all.x = T,by = 'ID')
-      } else { # UNSURE ABOUT THIS
-        dt[,-c(cols,lengthcol),with = F]
-        dt <- merge(dt[,-c(cols,lengthcol),with = F],wide.dt,all.x = T,by = 'ID')
-        dt$lengths[is.na(dt$lengths)]<-0
-      }
-      # I cannot get this to work in a reproducible way...
-      #df <- data.table(df)
-      #colname.number <- paste0(columns[i], "1")
-      #colname <- columns[i]
-      #out <- ifelse(df$lengths == 0, NA,
-      #                  ifelse(df$lengths == 1,
-      #                    df[,..colname.number],
-      #                    df[,..colname]))
-      # The issue is filling this into here even though it is the exact same size
-      # df[,..colname] <- out
-
-      dt <- reassign_value(dt, i)
-      dt <- as.data.table(dt)
-      colnames(dt)[which(colnames(dt) == "lengths")] <- lengthcol
-      MIN <- paste0(columns[i], "1")
-
-      dt <- dt[,-c(which(colnames(dt)==MIN):which(colnames(dt)==MAX),which(colnames(dt)==column.lengths[i])),with = F]
-
-      # Not MAX_OG, it seems
-      y <- dt[,'ID']
-      colname <- columns[i]
-      x = dt[,..colname]
-      lengthdt <- pmap_dfr(list(x, y), index.lengths)
-      colnames(lengthdt)[1] <- paste0(columns[i], ".lengths")
-      dt <- merge(dt, lengthdt, all.x = T,by = "ID")
+    ## Collapsing columns into lists again
+    run.dt <- wide.dt[lengths>1,]
+    if(nrow(run.dt) > 0){
+      string.dt <- collapse_column(run.dt, columns[i])
+      colnames(string.dt) <- c(columns[i], "ID")
+      lengthcol <- paste0(columns[i], ".lengths")
+      dt <- merge(dt[,-c(cols,lengthcol),with = F],wide.dt,all.x = T,by = 'ID')
+      dt$lengths[is.na(dt$lengths)]<-0
+      dt <- merge(dt,string.dt,all.x = T,by = 'ID')
+    } else { # UNSURE ABOUT THIS
+      lengthcol <- paste0(columns[i], ".lengths")
+      dt[,-c(cols,lengthcol),with = F]
+      dt <- merge(dt[,-c(cols,lengthcol),with = F],wide.dt,all.x = T,by = 'ID')
+      dt$lengths[is.na(dt$lengths)]<-0
     }
+    dt <- reassign_value(dt, i)
+    dt <- as.data.table(dt)
+    colnames(dt)[which(colnames(dt) == "lengths")] <- lengthcol
+
+
+    dt <- dt[,-c(which(colnames(dt)==MIN):which(colnames(dt)==MAX),which(colnames(dt)==column.lengths[i])),with = F]
+
+    # Not MAX_OG, it seems
+    y <- dt[,'ID']
+    colname <- columns[i]
+    x = dt[,..colname]
+    lengthdt <- pmap_dfr(list(x, y), index.lengths)
+    colnames(lengthdt)[1] <- paste0(columns[i], ".lengths")
+    dt <- merge(dt, lengthdt, all.x = T,by = "ID")
+  }
   dt[,nested:=NULL]
+
+  # Honeslty I don't know what to do with doi URLs right now so abandoning
+  nondoiurlcols <- which(colnames(dt) %in% colnames(dt)[!(str_detect(colnames(dt), 'doiurl'))])
+  dt <- dt[,..nondoiurlcols]
+
   #dt <- data.table(df) %>% select(-nested)
   # Look for congruent cases using matching_fx
   ### exclude author
