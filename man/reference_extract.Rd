@@ -19,7 +19,7 @@ reference_extract(
 
 \item{ref_dir}{The name of the directory where reference extractions are to be exported}
 
-\item{layout}{Specification of whether PDFs should be evaluated as no layout ("none"), or layout with two columns ("column")}
+\item{layout}{Specification of whether PDFs should be evaluated as no layout ("no_layout"), or layout with two columns ("layout")}
 
 \item{cores}{how many cores you want to use in pblapply}
 }

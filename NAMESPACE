@@ -2,6 +2,7 @@
 
 export(reference_clean)
 export(reference_clean2)
+export(reference_clean3)
 export(reference_compile)
 export(reference_extract)
 import(data.table)

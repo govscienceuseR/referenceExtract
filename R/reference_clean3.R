@@ -1,6 +1,6 @@
 #' Clean Anystyle output
 #'
-#' Version 2,runs through columns of the Anystyle output (c("date", "url", "title", "container", "publisher", "doi")) and cleans them. Steps include identifying the lengths of different lists in each reference to unlist and unnest them to create sensible references.
+#' Version 3,runs through columns of the Anystyle output (c("date", "url", "title", "container", "publisher", "doi")) and cleans them. Steps include identifying the lengths of different lists in each reference to unlist and unnest them to create sensible references. Includes additional author name improvements.
 #'
 #' @param dt data.table from the reference_compile() function
 #'
