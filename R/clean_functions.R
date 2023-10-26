@@ -517,38 +517,38 @@ reassign_value2 <- function(dt, colname, min_col){
   if(colname == "date"){
     df$date <- ifelse(df$lengths == 0, NA,
                       ifelse(df$lengths == 1,
-                             df[,MIN],
+                             df[,min_col],
                              df[,colname]))
   } else if(colname == "url"){
     df$url <- ifelse(df$lengths == 0, NA,
                      ifelse(df$lengths == 1,
-                            df[,MIN],
+                            df[,min_col],
                             df[,colname]))
   } else if(colname == "title"){
     df$title <- ifelse(df$lengths == 0, NA,
                        ifelse(df$lengths == 1,
-                              df[,MIN],
+                              df[,min_col],
                               df[,colname]))
   } else if(colname == "container"){
     df$container <- ifelse(df$lengths == 0, NA,
                            ifelse(df$lengths == 1,
-                                  df[,MIN],
+                                  df[,min_col],
                                   df[,colname]))
   } else if(colname == "publisher"){
     df$publisher <- ifelse(df$lengths == 0, NA,
                            ifelse(df$lengths == 1,
-                                  df[,MIN],
+                                  df[,min_col],
                                   df[,colname]))
   } else if(colname == "doi"){
     df$doi <- ifelse(df$lengths == 0, NA,
                      ifelse(df$lengths == 1,
-                            df[,MIN],
+                            df[,min_col],
                             df[,colname]))
   } else if(colname == "author"){
     # CHANGING THIS ti redefine min
     df$author <- ifelse(df$lengths == 0, NA,
                         ifelse(df$lengths == 1,
-                               df[,MIN],
+                               df[,min_col],
                                df[,colname]))
 
   }
