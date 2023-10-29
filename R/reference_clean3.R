@@ -195,18 +195,22 @@ reference_clean3 <- function(dt){
       dt <- merge(dt[,-c(cols,lengthcol),with = F],wide.dt,all.x = T,by = 'ID')
       dt$lengths[is.na(dt$lengths)]<-0
       dt <- merge(dt,string.dt,all.x = T,by = 'ID')
+      dt <- reassign_value2(dt, columns[i], MIN)
+      dt <- as.data.table(dt)
+      colnames(dt)[which(colnames(dt) == "lengths")] <- lengthcol
+      dt <- dt[,-c(which(colnames(dt)==MIN):which(colnames(dt)==MAX),which(colnames(dt)==column.lengths[i])),with = F]
     } else { # UNSURE ABOUT THIS
-      lengthcol <- paste0(columns[i], ".lengths")
-      dt[,-c(cols,lengthcol),with = F]
-      dt <- merge(dt[,-c(cols,lengthcol),with = F],wide.dt,all.x = T,by = 'ID')
+      dt[,-c(cols),with = F]
+      dt <- merge(dt[,-c(cols),with = F],wide.dt,all.x = T,by = 'ID')
       dt$lengths[is.na(dt$lengths)]<-0
+      colnames(dt)[str_detect(colnames(dt), paste0('^',cols))] <- columns[i]
+      MIN = columns[i]
+      dt <- reassign_value2(dt, columns[i], MIN)
+      dt <- as.data.table(dt)
+      lengthcol <- paste0(columns[i], ".lengths")
+      colnames(dt)[which(colnames(dt) == "lengths")] <- lengthcol
+      dt <- dt[,-c(which(colnames(dt)==column.lengths[i])),with = F]
     }
-    dt <- reassign_value2(dt, columns[i], MIN)
-    dt <- as.data.table(dt)
-    colnames(dt)[which(colnames(dt) == "lengths")] <- lengthcol
-
-
-    dt <- dt[,-c(which(colnames(dt)==MIN):which(colnames(dt)==MAX),which(colnames(dt)==column.lengths[i])),with = F]
 
     # Not MAX_OG, it seems
     y <- dt[,'ID']
