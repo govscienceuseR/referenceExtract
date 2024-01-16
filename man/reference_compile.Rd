@@ -9,7 +9,7 @@ reference_compile(ref_dir, cores = 1)
 \arguments{
 \item{ref_dir}{directory name that holds the file(s) with .JSON extension extracted by Anystyle.io}
 
-\item{cores}{how many cores you want to use in pblapply, defaults to 1}
+\item{cores}{how many cores you want to use in mclapply, defaults to 1}
 }
 \value{
 data table
