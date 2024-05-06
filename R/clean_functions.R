@@ -134,7 +134,9 @@ collapse_column <- function(x, column_name){
     indices.l <- c()
     for(b in 1:length(new.cols)){
       yr <- x[[a, new.cols[b]]]
-      indices.l[b] <- yr
+      if(length(yr)>1){
+        indices.l[b] <- yr
+      }
     }
     string.dt$V1[a] <- list(c(indices.l))
     string.dt$V2[a] <- x[[a,1]]
