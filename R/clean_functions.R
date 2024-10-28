@@ -82,20 +82,22 @@ keep_urls <- function(x){
 #usethis::use_data(agencies)
 data("agencies", envir=environment())
 
-org.words <- c("Administration", "Agency", "Association", "Associates", "Authority",  "Board", "Bureau", "Center", "Datacenter", "^Consult[a-z]+$",  "Commission", "Council", "County",  "Department", "District", "Foundation", "Government[s]*", "LLC", "Group", "Geological Survey", "Survey","Application","U\\.S\\.","Laboratory", "Service", "Society", "Univeristy", "\\bUS\\b",'Letter','County','Coordinating',"Collaborate")
+org.words <- c("Administration", "Agency", "Association", "Associates", "Authority",  "Board", "Bureau", "Center", "Datacenter", "^Consult[a-z]+$",  "Commission", "Council", "County",  "Department", "District", "Foundation", "Government[s]*", "LLC", "Group", "Geological Survey", "Survey","Application","U\\.S\\.","Laboratory", "Service", "Society", "University", "\\bUS\\b",'Letter','County','Coordinating',"Collaborate")
 org.words <- paste(org.words, collapse = "|")
 agency.pattern <- paste(agencies$Agency, collapse = "\\b|\\b")
-
+#### TYLER SWITCHED str_extract(x,doi_pattern) --> str_extract(x,agency.pattern) here...
 extract_agency_titles <- function(x){
   ifelse(str_detect(x, org.words) | str_detect(x, agency.pattern),
-         str_extract(x, doi_pattern), x)
+         str_extract(x, agency.pattern), x)
 }
 
 rm_title_pattern <- paste(c("[Pp]ersonal [Cc]ommunication:?",
                             "^\\d*$"), collapse = "|")
 
+#### TYLER REMOVED ORG WORDS
 rm_titles <- function(x){
-  ifelse(str_detect(x, org.words) | str_detect(x, agency.pattern) |
+  ifelse(#str_detect(x, org.words) |
+    str_detect(x, agency.pattern) |
            str_detect(x, rm_title_pattern) | str_detect(x, rm.row) |
            nchar(x) < 10 | nchar(x) > 250, NA, x)
 }
